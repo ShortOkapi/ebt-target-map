@@ -935,7 +935,7 @@ body{display:flex;flex-direction:column;min-height:100dvh}.workspace{height:auto
 <script>/* Standalone editor. Leaflet and dataset operations are bundled in this file. */
 (async function(){
 'use strict';
-const APP_VERSION='1.1.2-rc2';
+const APP_VERSION='1.1.2-rc3';
 const C=TargetCore, G=C.GRID, $=id=>document.getElementById(id);
 document.title=`EBT Dot Safari · Target map editor · v${APP_VERSION}`;
 $('draft-status').textContent=`Standalone editor · v${APP_VERSION}`;
@@ -1312,6 +1312,10 @@ function download(data,name){
 }
 function exportDataset(){
   if(!readyToExport())return;
+  if(editor.doc.revision === exportedRevision) {
+    status('No new changes to save. The map file is already up to date.');
+    return;
+  }
   try{
     const data=editor.export();download(data,exportFilename('euro-use-targets','json'));
     exportedRevision=data.revision;
@@ -1441,6 +1445,10 @@ $('export-file').onclick=exportDataset;
 
 $('publish-map').onclick = async () => {
   if (!readyToExport()) return;
+  if (editor.doc.revision === exportedRevision) {
+    status('No new changes to publish. The live map is already up to date.');
+    return;
+  }
   const token = prompt("Enter your GitHub Personal Access Token to publish to the live site:");
   if (!token) return;
 
