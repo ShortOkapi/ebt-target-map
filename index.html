@@ -680,6 +680,8 @@ svg.leaflet-image-layer.leaflet-interactive path {
 body{display:flex;flex-direction:column;min-height:100dvh}.workspace{height:auto;flex:1;min-height:430px}.top,.toolbar,#status-bar,#editor-bar{flex-shrink:0}#editor-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:8px 20px;background:#fff;border-bottom:1px solid var(--border);font-size:12px}#local-author{width:190px;min-height:34px;padding:6px 9px}.opacity-control{width:145px}.opacity-row{display:flex;align-items:center;gap:7px;height:42px}.opacity-row input{padding:0;min-height:0;width:105px;accent-color:var(--accent)}.opacity-row output{min-width:30px}.sea-swatch{background-image:repeating-linear-gradient(135deg,transparent 0,transparent 4px,#28629c 4px,#28629c 5px)!important}#edit-mode-note{font-size:12px;color:var(--muted)}
 @media(min-width:731px){body{height:100dvh}.workspace{min-height:300px}.inspector{min-height:0}.toolbar #region{max-width:220px}}
 @media(max-width:730px){.workspace{min-height:0;flex:none}#editor-bar{padding:9px 12px}.opacity-control{width:130px}.opacity-row input{width:90px}}
+#toast {position:fixed;bottom:20px;left:50%;transform:translate(-50%, 20px);background:#17354b;color:#fff;padding:12px 24px;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.25);z-index:9999;opacity:0;visibility:hidden;transition:all 0.3s ease;font-weight:500;pointer-events:none;text-align:center;width:max-content;max-width:90vw;}
+#toast.show {transform:translate(-50%, 0);opacity:1;visibility:visible;}
 </style>
 <style>
 .starting-map{font-size:12px;line-height:1.4;color:#c4d7e3;margin-top:4px;overflow-wrap:anywhere}
@@ -733,6 +735,7 @@ body{display:flex;flex-direction:column;min-height:100dvh}.workspace{height:auto
  <p id="report-message" class="small" role="status" aria-live="polite" hidden></p>
  <p class="sidebar-help">The change report is for reading and reviewing. The map file keeps the complete working map so you can continue editing it elsewhere.</p>
 </dialog>
+<div id="toast" role="alert" aria-live="assertive"></div>
 <dialog id="help-dialog" class="help">
  <div class="dialog-top" style="align-items: flex-start;">
   <h2 style="margin: 0 0 4px 0; color: #0f172a; font-size: 18px;">Using the editor <span id="help-app-version" style="font-size: 12px; font-weight: 500; color: #64748b;"></span></h2>
@@ -935,7 +938,7 @@ body{display:flex;flex-direction:column;min-height:100dvh}.workspace{height:auto
 <script>/* Standalone editor. Leaflet and dataset operations are bundled in this file. */
 (async function(){
 'use strict';
-const APP_VERSION='1.1.2-rc3';
+const APP_VERSION='1.1.2-rc4';
 const C=TargetCore, G=C.GRID, $=id=>document.getElementById(id);
 document.title=`EBT Dot Safari · Target map editor · v${APP_VERSION}`;
 $('draft-status').textContent=`Standalone editor · v${APP_VERSION}`;
@@ -1071,6 +1074,7 @@ const TargetLayer=L.GridLayer.extend({createTile(coords){
 }});
 const layer=new TargetLayer({keepBuffer:1,updateWhenZooming:false,zIndex:10}).addTo(map);
 function status(message,error=false){$('status').textContent=message;$('status').classList.toggle('error',error);}
+let toastTimeout; function showToast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>t.classList.remove('show'),4000);}
 function add(parent,tag,text,className){const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(className)e.className=className;parent.append(e);return e;}
 function authorLabel(h){return h.actor?.name||'Author not recorded in this older file';}
 function commentText(parent,text){
@@ -1313,7 +1317,7 @@ function download(data,name){
 function exportDataset(){
   if(!readyToExport())return;
   if(editor.doc.revision === exportedRevision) {
-    status('No new changes to save. The map file is already up to date.');
+    showToast('No new changes to save. The map file is already up to date.');
     return;
   }
   try{
@@ -1446,7 +1450,7 @@ $('export-file').onclick=exportDataset;
 $('publish-map').onclick = async () => {
   if (!readyToExport()) return;
   if (editor.doc.revision === exportedRevision) {
-    status('No new changes to publish. The live map is already up to date.');
+    showToast('No new changes to publish. The live map is already up to date.');
     return;
   }
   const token = prompt("Enter your GitHub Personal Access Token to publish to the live site:");
