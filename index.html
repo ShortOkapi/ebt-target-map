@@ -932,7 +932,7 @@ body{display:flex;flex-direction:column;min-height:100dvh}.workspace{height:auto
 <script>/* Standalone editor. Leaflet and dataset operations are bundled in this file. */
 (async function(){
 'use strict';
-const APP_VERSION='1.1.0-rc11';
+const APP_VERSION='1.1.1';
 const C=TargetCore, G=C.GRID, $=id=>document.getElementById(id);
 document.title=`EBT Dot Safari · Target map editor · v${APP_VERSION}`;
 $('draft-status').textContent=`Standalone editor · v${APP_VERSION}`;
@@ -976,7 +976,19 @@ function startingMapLabel(){
   return `Starting map: ${date} · revision ${startingMap.revision}`;
 }
 function showStartingMap(){$('starting-map').textContent=startingMapLabel();}
-const regionNames=['Clipperton','St-Pierre & Miquelon','Cyprus','Terre d’Adélie','French Caribbean & Guiana','Azores, Madeira & Canary Islands','Finland & Baltic','Ireland','French Antarctic Ocean areas','French Indian Ocean areas','Main European cluster'];
+const regionDisplayOrder = [
+  { id: 'workbook-11', name: 'Main European cluster' },
+  { id: 'workbook-07', name: 'Finland & Baltic' },
+  { id: 'workbook-08', name: 'Ireland' },
+  { id: 'workbook-06', name: 'Azores, Madeira & Canaries' },
+  { id: 'workbook-03', name: 'Cyprus' },
+  { id: 'workbook-05', name: 'French Caribbean & Guiana' },
+  { id: 'workbook-10', name: 'French Indian Ocean areas' },
+  { id: 'workbook-02', name: 'St-Pierre & Miquelon' },
+  { id: 'workbook-09', name: 'French Antarctic Ocean areas\u00A0\u00A0' },
+  { id: 'workbook-04', name: 'Terre d’Adélie' },
+  { id: 'workbook-01', name: 'Clipperton' }
+];
 const map=L.map('map',{center:[49,10],zoom:5,minZoom:2,maxZoom:18,zoomControl:true,worldCopyJump:false});
 const osm=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,referrerPolicy:'strict-origin-when-cross-origin',attribution:'© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>'});
 const esri=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Imagery © Esri, Maxar, Earthstar Geographics and the GIS User Community'});
@@ -1037,7 +1049,7 @@ const TargetLayer=L.GridLayer.extend({createTile(coords){
     }
   }
   if(coords.z>=6){
-    ctx.strokeStyle='rgba(43,69,83,.28)';ctx.lineWidth=.7;
+    ctx.strokeStyle='rgba(255, 0, 0, 0.4)';ctx.lineWidth=.7;
     for(let i=i0;i<=i1+1;i++){const p=map.project([G.minLat+i*G.dotH,b.getWest()],coords.z).subtract(nw);ctx.beginPath();ctx.moveTo(0,p.y);ctx.lineTo(size.x,p.y);ctx.stroke();}
     for(let j=j0;j<=j1+1;j++){const p=map.project([b.getNorth(),G.minLon+j*G.dotW],coords.z).subtract(nw);ctx.beginPath();ctx.moveTo(p.x,0);ctx.lineTo(p.x,size.y);ctx.stroke();}
   }
@@ -1103,7 +1115,16 @@ function renderSelection(){
 
 function populateSources(){
   $('region').replaceChildren(new Option('Choose an area…',''));
-  editor.doc.sources.forEach((s,index)=>$('region').append(new Option(regionNames[index]||s.filename,s.id)));
+  regionDisplayOrder.forEach(r => {
+    if (editor.doc.sources.some(s => s.id === r.id)) {
+      $('region').append(new Option(r.name, r.id));
+    }
+  });
+  editor.doc.sources.forEach(s => {
+    if (!regionDisplayOrder.some(r => r.id === s.id)) {
+      $('region').append(new Option(s.filename, s.id));
+    }
+  });
   $('dataset-info').replaceChildren();add($('dataset-info'),'p',`Standalone editor · v${APP_VERSION}`);add($('dataset-info'),'p',`Dataset ${editor.doc.datasetId} · ${editor.doc.sources.length} source workbooks · ${editor.cells.size.toLocaleString('en-GB')} classified dots.`);
   add($('dataset-info'),'p',`Grid verified against PWA v${editor.doc.baseline?.appVersion||'2.0.4'}, commit ${editor.doc.baseline?.commit||'unrecorded'}.`);
   add($('dataset-info'),'p','Leaflet 1.9.4 © Vladimir Agafonkin and contributors (BSD-2-Clause). Editor code: MIT. Curated data provenance is retained in the JSON.');
