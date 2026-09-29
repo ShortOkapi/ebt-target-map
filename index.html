@@ -4,12 +4,12 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>EBT Dot Safari · Target map editor</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAsTAAALEwEAmpwYAAACJ0lEQVRYhe1XO0sDQRA+0N9wh62N2t9ZqZcoRLy1jaIXc8HCRxNj8IFaCl4ajYUpQtRCBbWUkEr/gDaKj98hlqY5+TZuvMdeTpDLISTwNfPNzszOzkzmBAE/Ve0Wlcm8KJM3SSF1SSFWSKiLsvYqyiQHn9R3w7lWC9EpF6JMqjQI3Lzdzm1B5ASkJKoAJIU8C+43XyocW+XbR6ty99REqfZgxYw1yvfGpi3z8tbBA5CBg048s07P2HnYXDQrzgwo2icCcAjdzhmy+2eUH81scHkAHHSyB+dcHrbd/gS3wM/4SvGC8mPzm7464KADXT+dTgBS0BMc1e65qVsqnFB+WF/1TS846CwXTrk8bAcGEDPWaMHhHRngvC+RonzP4KQ1u1108MDM1gHloNOfSNEzdh421e9OahmA1GYIbgF6Ge2EimYYSuWbt6NZIlOWoacdULVkk4cuzthtwCabEy0DMDlDBkDawcPR+9Wu9XHtBGQsCH2nyLUB239uQ0NPe5wzgAt9DhidAPSQn8D0KUL0eVARjky0LsK93xRhL6cNMeHsbYgggtoQZ7xtOPUPBlE8s+4ZxZjtGK/sdvrOoWcUI+0sSwPjc/SMexTHfzOKS65Npu1/RpXOQnIX8UpWjmAprdsFi6Z3LUfxqAFrOYYM63NUu3uzgs2FPc5aLkb9YSLKJBddAFq28XEqk2oEzm+EZLLr5wtZJjlR0V7wLmE5hW34oDf/dv4F/NSaZLFxf24AAAAASUVORK5CYII=">
 <link rel="icon" type="image/svg+xml" sizes="any" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2048%2048%22%3E%3Crect%20width%3D%2248%22%20height%3D%2248%22%20rx%3D%227%22%20fill%3D%22%2317354b%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%226%22%20width%3D%2210%22%20height%3D%2210%22%20rx%3D%222%22%20fill%3D%22%239bbcd0%22%2F%3E%3Crect%20x%3D%2219%22%20y%3D%226%22%20width%3D%2210%22%20height%3D%2210%22%20rx%3D%222%22%20fill%3D%22%239bbcd0%22%2F%3E%3Crect%20x%3D%2232%22%20y%3D%226%22%20width%3D%2210%22%20height%3D%2210%22%20rx%3D%222%22%20fill%3D%22%239bbcd0%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%2219%22%20width%3D%2210%22%20height%3D%2210%22%20rx%3D%222%22%20fill%3D%22%239bbcd0%22%2F%3E%3Crect%20x%3D%2219%22%20y%3D%2219%22%20width%3D%2210%22%20height%3D%2210%22%20rx%3D%222%22%20fill%3D%22%23f1a983%22%2F%3E%3Crect%20x%3D%2232%22%20y%3D%2219%22%20width%3D%2210%22%20height%3D%2210%22%20rx%3D%222%22%20fill%3D%22%239bbcd0%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%2232%22%20width%3D%2210%22%20height%3D%2210%22%20rx%3D%222%22%20fill%3D%22%239bbcd0%22%2F%3E%3Crect%20x%3D%2219%22%20y%3D%2232%22%20width%3D%2210%22%20height%3D%2210%22%20rx%3D%222%22%20fill%3D%22%239bbcd0%22%2F%3E%3Crect%20x%3D%2232%22%20y%3D%2232%22%20width%3D%2210%22%20height%3D%2210%22%20rx%3D%222%22%20fill%3D%22%239bbcd0%22%2F%3E%3C%2Fsvg%3E">
 <meta name="color-scheme" content="light">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="./style.css">
 </head>
 <body>
 <header class="top">
@@ -34,7 +34,7 @@
  <div class="map-wrap"><div id="map" aria-label="Editable Euro-use target map. Drag to pan; click to inspect a dot."></div><div id="map-message" role="status" hidden>Map imagery is unavailable. The grid, editing and exports still work. You can choose “Grid only” above.</div>
  <details class="legend" open><summary>Classifications</summary><div class="legend-items" id="legend-items"></div></details></div>
  <aside class="inspector" aria-label="Selected dot">
-  <section><div class="eyebrow" style="color:#657c8b">Euro-use area</div><div class="dot-title"><h2 id="dot-title" class="mono">Select a dot</h2></div><div id="current-class" class="pill"></div><p id="eligibility" class="eligibility"></p><p id="copy-info" class="small muted" style="margin-top:8px"></p>
+  <section><div class="eyebrow">Euro-use area</div><div class="dot-title"><h2 id="dot-title" class="mono">Select a dot</h2></div><div id="current-class" class="pill"></div><p id="eligibility" class="eligibility"></p><p id="copy-info" class="small muted"></p>
    <div class="details small muted" id="bounds"></div>
   </section>
   <section id="saved-comment-section"><h3>Latest saved comment</h3><p id="saved-comment-meta" class="small muted"></p><div id="saved-comment" class="comment"></div></section>
@@ -48,7 +48,7 @@
 <dialog id="review-dialog">
  <div class="dialog-top"><h2>Review Changes</h2><button data-close="review-dialog" aria-label="Close review">Close</button></div>
  <p class="muted small">Review the saved decisions and comments, then share or save the change report to send to Miguel / lmviterbo.</p>
- <div id="review-content" style="overflow-x:auto"></div>
+ <div id="review-content"></div>
  <div class="button-row"><button id="share-summary" class="primary" hidden>Share Change Report</button><button id="export-summary" class="primary">Save Change Report</button><button id="export-from-review">Save Map File</button></div>
  <p id="report-share-note" class="sidebar-help"></p>
  <p id="report-message" class="small" role="status" aria-live="polite" hidden></p>
@@ -56,9 +56,9 @@
 </dialog>
 <div id="toast" role="alert" aria-live="assertive"></div>
 <dialog id="help-dialog" class="help">
- <div class="dialog-top" style="align-items: flex-start;">
-  <h2 style="margin: 0 0 4px 0; color: #0f172a; font-size: 18px;">Using the editor <span id="help-app-version" style="font-size: 12px; font-weight: 500; color: #64748b;"></span></h2>
-  <button data-close="help-dialog" aria-label="Close help" style="background: none; border: none; font-size: 18px; cursor: pointer; color: #64748b; padding: 0; min-height: 0; width: auto;">✖</button>
+ <div class="dialog-top">
+  <h2>Using the editor <span id="help-app-version"></span></h2>
+  <button data-close="help-dialog" aria-label="Close help">✖</button>
  </div>
  <ol>
   <li>Enter your <strong>Editor Name</strong>. You can use your EuroBillTracker username.</li>
@@ -91,6 +91,6 @@
   <div id="dataset-info" class="small muted"></div>
  </details>
 </dialog>
-<script src="core.js"></script>
-<script src="editor.js"></script>
+<script src="./core.js"></script>
+<script src="./editor.js"></script>
 </body></html>

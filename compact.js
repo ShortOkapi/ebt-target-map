@@ -1,12 +1,15 @@
-const fs = require('fs');
+const fs = require('node:fs');
+const path = require('node:path');
 const TargetCore = require('./core.js');
 
-// 1. Read the newly published master map
-const data = JSON.parse(fs.readFileSync('euro-use-master-map.json', 'utf8'));
+// Resolve both map files relative to this script, including when run elsewhere.
+const masterPath = path.join(__dirname, 'euro-use-master-map.json');
+const compactPath = path.join(__dirname, 'euro-use-eligibility.json');
 
-// 2. Compact the map using shared core logic
+// Use the same validation and compaction as the browser's eligibility export.
+const data = JSON.parse(fs.readFileSync(masterPath, 'utf8'));
 const out = TargetCore.compact(data);
 
-// 3. Save it as the new compact file
-fs.writeFileSync('euro-use-eligibility.json', JSON.stringify(out));
+// Validation completes before the existing output file is opened for writing.
+fs.writeFileSync(compactPath, JSON.stringify(out));
 console.log(`Successfully compacted ${out.eligibleCount} dots into ${out.ranges.length} ranges.`);
