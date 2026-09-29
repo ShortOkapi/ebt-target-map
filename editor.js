@@ -1,7 +1,9 @@
 /* Standalone editor. Leaflet and dataset operations are bundled in this file. */
 (async function(){
 'use strict';
-const APP_VERSION='1.2.0-rc1';
+try {
+
+const APP_VERSION='1.2.0-rc2';
 const C=TargetCore, G=C.GRID, $=id=>document.getElementById(id);
 document.title=`EBT Dot Safari · Target map editor · v${APP_VERSION}`;
 $('draft-status').textContent=`Standalone editor · v${APP_VERSION}`;
@@ -63,7 +65,6 @@ const map=L.map('map',{center:[49,10],zoom:5,minZoom:2,maxZoom:18,zoomControl:tr
 const osm=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,referrerPolicy:'strict-origin-when-cross-origin',attribution:'© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>'});
 const esri=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Imagery © Esri, Maxar, Earthstar Geographics and the GIS User Community'});
 let background=osm.addTo(map);
-// The selected background always stays selected, even if tiles cannot load.
 for(const sourceLayer of [osm,esri]){
   sourceLayer.on('tileerror',()=>{
     if(background!==sourceLayer)return;
@@ -76,7 +77,6 @@ for(const sourceLayer of [osm,esri]){
 function rebuildRows(){rows=new Map();for(const c of editor.cells.values()){if(!rows.has(c.i))rows.set(c.i,[]);rows.get(c.i).push(c);}}
 rebuildRows();
 
-// Crossed lines retain contrast at low opacity; zero still hides the overlay.
 function drawExcludedHatch(ctx,r,size,opacity){
   if(opacity<=0)return;
   const left=Math.max(0,r[0]),top=Math.max(0,r[1]);
@@ -85,7 +85,6 @@ function drawExcludedHatch(ctx,r,size,opacity){
   ctx.save();ctx.beginPath();ctx.rect(...r);ctx.clip();
   ctx.globalAlpha=Math.min(.9,.5+opacity*.4);
   ctx.beginPath();
-  // Sixteen pixels divides the map tile size, keeping the mesh aligned.
   for(let k=Math.floor((left+top)/16)*16;k<=right+bottom;k+=16){
     ctx.moveTo(k-top,top);ctx.lineTo(k-bottom,bottom);
   }
@@ -93,13 +92,11 @@ function drawExcludedHatch(ctx,r,size,opacity){
     ctx.moveTo(k+top,top);ctx.lineTo(k+bottom,bottom);
   }
   if(r[2]>=2&&r[3]>=2)ctx.rect(r[0]+.5,r[1]+.5,r[2]-1,r[3]-1);
-  // A light edge keeps the dark lines visible over satellite imagery too.
   ctx.strokeStyle='rgba(255,255,255,.65)';ctx.lineWidth=3;ctx.stroke();
   ctx.strokeStyle='#30343b';ctx.lineWidth=1;ctx.stroke();
   ctx.restore();
 }
 
-// Intentionally keeps the v2.0.4 wrapped GridLayer geometry and anchors.
 const TargetLayer=L.GridLayer.extend({createTile(coords){
   const canvas=document.createElement('canvas'), size=this.getTileSize(), dpr=Math.min(devicePixelRatio||1,2);
   canvas.width=size.x*dpr;canvas.height=size.y*dpr;canvas.style.width=size.x+'px';canvas.style.height=size.y+'px';
@@ -252,36 +249,7 @@ function buildReport(data){
   const decisionsHTML=decisions.map((d,index)=>`<tr data-order="${index}"><td data-sort="${d.dot.join(',')}">[${d.dot.join(', ')}]</td><td>${C.CLASSES[d.from].label}</td><td><span class="swatch${d.to==='excluded'?' excluded-swatch':d.to==='unreviewed'?' unreviewed-swatch':d.to==='sea'?' sea-swatch':''}" style="background:${C.CLASSES[d.to].color}"></span>${C.CLASSES[d.to].label}</td></tr>`).join('');
   const summaryHTML=history.map((h,index)=>`<tr data-order="${index}"><td data-sort="${h.dot.join(',')}"><a href="#entry-${index+1}">[${h.dot.join(', ')}]</a></td><td data-sort="${escapeHTML(h.at)}">${escapeHTML(when(h))}</td><td>${escapeHTML(authorLabel(h))}</td><td>${escapeHTML(description(h))}${undoneBadge(h)}</td></tr>`).join('');
   const commentsHTML=history.map((h,index)=>`<article id="entry-${index+1}"><h3>${index+1}. [${h.dot.join(', ')}] — ${escapeHTML(description(h))}${undoneBadge(h)}</h3><p class="meta">${escapeHTML(when(h))} · ${escapeHTML(authorLabel(h))}</p><div class="comment">${linkedComment(h.comment)}</div></article>`).join('');
-  return `<!doctype html><html lang="en">
-<!-- Bundled Leaflet 1.9.4 licence:
-BSD 2-Clause License
-
-Copyright (c) 2010-2023, Volodymyr Agafonkin
-Copyright (c) 2010-2011, CloudMade
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice, this
-   list of conditions and the following disclaimer.
-
-2. Redistributions in binary form must reproduce the above copyright notice,
-   this list of conditions and the following disclaimer in the documentation
-   and/or other materials provided with the distribution.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
---><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>EBT Dot Safari — saved changes, revision ${data.revision}</title><style>${REPORT_CSS}</style></head><body><main><div class="eyebrow">EBT DOT SAFARI</div><h1>Saved map changes</h1><p class="meta">${escapeHTML(startingMapLabel())}<br>Current map revision: ${data.revision}<br>History times are shown in UTC.</p><p class="callout"><strong>${count(changed)} changed ${changed===1?'dot':'dots'} · ${count(history.length)} saved ${history.length===1?'entry':'entries'} · ${count(editors)} ${editors===1?'editor':'editors'} · ${count(eligible)} eligible dots</strong></p><nav id="contents" aria-label="Report contents" tabindex="-1"><a href="#area-summary">Area summary</a><a href="#current">Current decisions</a><a href="#summary">History log</a><a href="#comments">Full comments</a></nav><button class="print" onclick="window.print()">Print / Save as PDF</button><div class="section-heading"><h2 id="area-summary">Area summary</h2><a class="back-to-contents" href="#contents"><span aria-hidden="true">↑</span>Back to contents</a></div><p class="meta">Total Conquerable and Unconquerable Euro land dots per area.</p><div class="scroll"><table aria-label="Area summary"><thead><tr><th>Area</th><th>Conquerable</th><th>Unconquerable</th><th>Total Euro land</th></tr></thead><tbody>${statsHTML}</tbody></table></div><div class="section-heading"><h2 id="current">Current decisions</h2><a class="back-to-contents" href="#contents"><span aria-hidden="true">↑</span>Back to contents</a></div><p class="meta">Click any column heading to sort these decisions.</p>${!decisions.length?'<p>No manual decisions have been saved in this map yet.</p>':''}<div class="scroll"><table id="current-table" class="sortable" aria-label="Current decisions"><thead><tr>${heading('Dot','dot')}${heading('Original classification','text')}${heading('Saved classification','text')}</tr></thead><tbody>${decisionsHTML}</tbody></table></div><div class="section-heading"><h2 id="summary">Summary</h2><a class="back-to-contents" href="#contents"><span aria-hidden="true">↑</span>Back to contents</a></div><p>Click a column heading to sort; click it again to reverse the order. Click a dot to read its full comment.</p><div class="scroll"><table id="summary-table" class="sortable" aria-label="Summary"><thead><tr>${heading('Dot','dot')}${heading('When','date')}${heading('Editor','text')}${heading('What was saved','text')}</tr></thead><tbody>${summaryHTML}</tbody></table></div><div class="section-heading"><h2 id="comments">Full comments</h2><a class="back-to-contents" href="#contents"><span aria-hidden="true">↑</span>Back to contents</a></div><p class="meta">Saved comments, with repeated saves shown only once. Edits and Redo steps labelled Undone have been reversed; Undo and Redo entries keep the full sequence. Current decisions above show the saved classifications.</p>${commentsHTML}<footer class="meta">Change report for Miguel / lmviterbo. Use Save Map File in the editor to keep or move the complete working map. This report does not update the public Dot Safari app.</footer><p id="sort-status" class="sr-only" role="status" aria-live="polite"></p></main><script>${REPORT_SCRIPT}</scr`+'ipt></body></html>';
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>EBT Dot Safari — saved changes, revision ${data.revision}</title><style>${REPORT_CSS}</style></head><body><main><div class="eyebrow">EBT DOT SAFARI</div><h1>Saved map changes</h1><p class="meta">${escapeHTML(startingMapLabel())}<br>Current map revision: ${data.revision}<br>History times are shown in UTC.</p><p class="callout"><strong>${count(changed)} changed ${changed===1?'dot':'dots'} · ${count(history.length)} saved ${history.length===1?'entry':'entries'} · ${count(editors)} ${editors===1?'editor':'editors'} · ${count(eligible)} eligible dots</strong></p><nav id="contents" aria-label="Report contents" tabindex="-1"><a href="#area-summary">Area summary</a><a href="#current">Current decisions</a><a href="#summary">History log</a><a href="#comments">Full comments</a></nav><button class="print" onclick="window.print()">Print / Save as PDF</button><div class="section-heading"><h2 id="area-summary">Area summary</h2><a class="back-to-contents" href="#contents"><span aria-hidden="true">↑</span>Back to contents</a></div><p class="meta">Total Conquerable and Unconquerable Euro land dots per area.</p><div class="scroll"><table aria-label="Area summary"><thead><tr><th>Area</th><th>Conquerable</th><th>Unconquerable</th><th>Total Euro land</th></tr></thead><tbody>${statsHTML}</tbody></table></div><div class="section-heading"><h2 id="current">Current decisions</h2><a class="back-to-contents" href="#contents"><span aria-hidden="true">↑</span>Back to contents</a></div><p class="meta">Click any column heading to sort these decisions.</p>${!decisions.length?'<p>No manual decisions have been saved in this map yet.</p>':''}<div class="scroll"><table id="current-table" class="sortable" aria-label="Current decisions"><thead><tr>${heading('Dot','dot')}${heading('Original classification','text')}${heading('Saved classification','text')}</tr></thead><tbody>${decisionsHTML}</tbody></table></div><div class="section-heading"><h2 id="summary">Summary</h2><a class="back-to-contents" href="#contents"><span aria-hidden="true">↑</span>Back to contents</a></div><p>Click a column heading to sort; click it again to reverse the order. Click a dot to read its full comment.</p><div class="scroll"><table id="summary-table" class="sortable" aria-label="Summary"><thead><tr>${heading('Dot','dot')}${heading('When','date')}${heading('Editor','text')}${heading('What was saved','text')}</tr></thead><tbody>${summaryHTML}</tbody></table></div><div class="section-heading"><h2 id="comments">Full comments</h2><a class="back-to-contents" href="#contents"><span aria-hidden="true">↑</span>Back to contents</a></div><p class="meta">Saved comments, with repeated saves shown only once. Edits and Redo steps labelled Undone have been reversed; Undo and Redo entries keep the full sequence. Current decisions above show the saved classifications.</p>${commentsHTML}<footer class="meta">Change report for Miguel / lmviterbo. Use Save Map File in the editor to keep or move the complete working map. This report does not update the public Dot Safari app.</footer><p id="sort-status" class="sr-only" role="status" aria-live="polite"></p></main><script>${REPORT_SCRIPT}</scr`+'ipt></body></html>';
 }
 
 function currentActor(){return {id:'local',name:$('local-author').value.trim(),authentication:'local'};}
@@ -313,7 +281,6 @@ function readyToExport(){
 function refreshSave(){
   const actor=currentActor();
   const duplicate=!!actor.name&&selected&&editor.duplicate(selected.i,selected.j,$('classification').value,$('reason').value,actor);
-  // A missing name is explained when Save change is clicked.
   $('save-change').disabled=!canEdit()\vert{}\vert{}!selected\vert{}\vert{}!$('reason').value.trim()||duplicate;
   $('save-change').title=duplicate?'This classification and comment are already saved.':'';$('classification').disabled=importing||recoveryError;
   $('reason').disabled=importing||recoveryError;
@@ -336,7 +303,6 @@ function persist(dataChanged=false){
   if(!ready||recoveryError)return false;
   try{
     if(dataChanged)storedData=editor.export();
-    // Keep an unfinished form separate from confirmed JSON history.
     const pendingForm=hasFormDraft()?{dot:[selected.i,selected.j],classification:$('classification').value,reason:$('reason').value}:null;
     localStorage.setItem(DRAFT_KEY,JSON.stringify({
       data:storedData,exportedRevision,startingMap,author:$('local-author').value,
@@ -364,7 +330,6 @@ function setBackground(value){
 }
 function exportFilename(base,extension){
   const iso=new Date().toISOString();
-  // Filename times are UTC, with minute precision and no timezone suffix.
   const stamp=iso.slice(0,10).replace(/-/g,'')+'-'+iso.slice(11,16).replace(':','');
   const prefix=`${base}-r${editor.doc.revision}-`,suffix=`-${stamp}.${extension}`;
   const name=currentActor().name.replace(/[<>:"/\\|?*\u0000-\u001f]/g,'_');
@@ -402,10 +367,9 @@ let sharingReport=false;
 function prepareChangeReport(){
   const html=buildReport(editor.export()),name=exportFilename('EBT-map-change-report','html');
   let file=null;
-  // File creation is optional: downloading must work without file sharing.
   if(typeof File==='function'){
     try{file=new File([html],name,{type:'text/html'});}
-    catch(error){/* Keep the HTML download available. */}
+    catch(error){}
   }
   return {html,name,file};
 }
@@ -433,11 +397,9 @@ async function shareChangeReport(){
     if(!available)return;
     sharingReport=true;$('share-summary').disabled=true;$('export-summary').disabled=true;
     $('share-summary').textContent='Opening sharing menu…';
-    // Call share directly during the click, before any asynchronous work.
     await navigator.share({files:[report.file]});
     reportMessage('Report sharing requested.');
   }catch(error){
-    // Cancellation must not show an error or trigger a download.
     if(error?.name!=='AbortError'){
       reportMessage('Could not share the report. Use Save Change Report, then attach the downloaded file to your message.',true);
     }
@@ -453,8 +415,6 @@ function review(){
     frame.style.cssText='display:block;width:100%;height:52vh;min-height:300px;border:1px solid #ced8de;border-radius:6px;margin:16px 0;background:white';
     frame.setAttribute('sandbox','allow-scripts allow-modals allow-popups allow-popups-to-escape-sandbox');
     const report=prepareChangeReport();
-    // A srcdoc document otherwise inherits the editor URL as its link base.
-    // Only the embedded preview needs this base; downloaded/shared files do not.
     frame.srcdoc=report.html.replace('<head>','<head><base href="about:srcdoc">');
     reportSharingAvailable(canShareReport(report));reportMessage('');
     $('review-content').replaceChildren(frame);$('review-dialog').showModal();
@@ -530,12 +490,10 @@ $('publish-map').onclick = async () => {
     const repo = 'ShortOkapi/ebt-target-maps';
     const path = 'euro-use-master-map.json';
 
-    // 1. Find the exact file currently on GitHub so we can safely overwrite it
     let sha = '';
     const getRes = await fetch(`https://api.github.com/repos/${repo}/contents/${path}?ref=main`);
     if (getRes.ok) sha = (await getRes.json()).sha;
 
-    // 2. Prepare the new data securely
     const data = editor.export();
     const contentStr = JSON.stringify(data, null, 2) + '\n';
     const reader = new FileReader();
@@ -543,7 +501,6 @@ $('publish-map').onclick = async () => {
     reader.onloadend = async () => {
       const base64Content = reader.result.split(',')[1];
 
-      // 3. Upload the new file to your main branch
       const putRes = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
         method: 'PUT',
         headers: {
@@ -560,7 +517,6 @@ $('publish-map').onclick = async () => {
 
       if (!putRes.ok) throw new Error('Upload refused. Your GitHub token has likely expired. Time to generate a new token in GitHub Settings and update your saved copy!');
 
-      // 4. Trigger the local backup download
       download(data, exportFilename('euro-use-targets', 'json'));
       exportedRevision = data.revision;
       if (persist()) status(`Map published successfully to the live site, and local backup saved!`);
@@ -610,7 +566,6 @@ $('discard-draft').onclick=()=>{
   if(persist())status(`Using the bundled revision-${initial.revision} dataset.`);refresh();
 };
 
-// Restore both old editor drafts and this standalone editor's working draft.
 let recovered=null,rawDraft=null;
 try{
   rawDraft=localStorage.getItem(DRAFT_KEY);
@@ -651,6 +606,14 @@ window.addEventListener('beforeunload',event=>{
   if(!draftAvailable&&!recoveryError&&(editor.doc.revision!==exportedRevision||hasFormDraft())){event.preventDefault();event.returnValue='';}
 });
 new ResizeObserver(()=>map.invalidateSize()).observe($('map'));
-// Read-only inspection bridge, retained for checking the release candidate.
 window.TargetEditor=Object.freeze({getData:()=>editor.export(),getSelected:()=>({...selected}),map,layer});
+
+} catch(globalError) {
+  console.error(globalError);
+  const statusEl = document.getElementById('status');
+  if (statusEl) {
+    statusEl.textContent = 'Failed to load editor: ' + globalError.message;
+    statusEl.classList.add('error');
+  }
+}
 })();

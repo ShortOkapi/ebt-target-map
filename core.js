@@ -1,6 +1,15 @@
 /* MIT. Shared, DOM-free target dataset operations. No geographic renumbering. */
-(function (root) {
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) {
+    // Node.js
+    module.exports = factory();
+  } else {
+    // Browser global
+    root.TargetCore = factory();
+  }
+})(typeof globalThis !== 'undefined' ? globalThis : (typeof window !== 'undefined' ? window : this), function () {
   'use strict';
+  
   const GRID = Object.freeze({id:'ebt-dot-safari-legacy-v1',dotH:0.28,dotW:66/157,minLat:-89.72,minLon:-(178+140/157),longitudeWrap:360,minColumn:-3,maxColumn:853,minRow:0,maxRow:641});
   const CLASSES = Object.freeze({
     eligible:{label:'Conquerable Euro land',color:'#F1A983'},
@@ -14,30 +23,32 @@
   const compare = (a,b) => a.i-b.i || a.j-b.j;
   const canonicalLongitude = lon => ((lon+180)%360+360)%360-180;
   const inBounds = (i,j) => Number.isSafeInteger(i) && Number.isSafeInteger(j) && i>=GRID.minRow && i<=GRID.maxRow && j>=GRID.minColumn && j<=GRID.maxColumn;
+  
   function atLatLng(lat,lon) {
     const i=Math.floor((lat-GRID.minLat)/GRID.dotH);
     const j=Math.floor((canonicalLongitude(lon)-GRID.minLon)/GRID.dotW);
     if (!inBounds(i,j)) throw Error('This position is outside the legacy grid.');
     return {i,j};
   }
+  
   function bounds(i,j) {
     return {south:GRID.minLat+i*GRID.dotH,north:GRID.minLat+(i+1)*GRID.dotH,
             west:GRID.minLon+j*GRID.dotW,east:GRID.minLon+(j+1)*GRID.dotW};
   }
+  
   function parseDot(text) {
     const m=String(text).trim().match(/^\[?\s*(-?\d+)\s*[,;_]\s*(-?\d+)\s*\]?$/);
     if(!m) throw Error('Enter a dot such as [458, 403].');
     const i=Number(m[1]), enteredJ=Number(m[2]);
     if(!Number.isSafeInteger(i)||!Number.isSafeInteger(enteredJ)||i<GRID.minRow||i>GRID.maxRow) throw Error('Dot index is outside the legacy grid.');
     if(inBounds(i,enteredJ)) return {i,j:enteredJ,world:0,enteredJ};
-    // Convenience input aliases only. Never use this for geographic lookup or
-    // tile rendering: 360 / dotW is 856.3636..., not 856. Seam IDs stay distinct.
     const first=Math.ceil((enteredJ-GRID.maxColumn)/856), last=Math.floor((enteredJ-GRID.minColumn)/856);
     if(first!==last) throw Error('This repeated ID is ambiguous at the world seam. Enter its original column between -3 and 853.');
     const j=enteredJ-first*856;
     if(!inBounds(i,j)) throw Error('Dot index is outside the legacy grid.');
     return {i,j,world:first,enteredJ};
   }
+  
   function validate(data) {
     const fail=m=>{throw Error(m);};
     if(!data || data.format!=='ebt-target-editor' || data.formatVersion!==1) fail('This is not a supported editable target dataset (format version 1).');
@@ -75,6 +86,7 @@
     if(data.revision<data.history.length) fail('Revision is older than the change history.');
     return data;
   }
+  
   function compact(data) {
     validate(data);
     const ranges=[];
@@ -85,13 +97,16 @@
     }
     return {format:'ebt-target-ranges',formatVersion:1,grid:clone(GRID),model:'euro-use',datasetId:data.datasetId,revision:data.revision,eligibleCount:data.cells.filter(c=>c.classification==='eligible').length,ranges};
   }
+  
   function sameEditor(a,b){
     const name=a?.name.trim();
     return !!name&&name===b?.name.trim()&&(a.id===b.id||a.authentication==='local'||b.authentication==='local');
   }
+  
   function repeatsEdit(previous,from,to,comment,actor){
     return from===to&&previous?.action==='edit'&&previous.to===to&&previous.comment.trim()===comment.trim()&&sameEditor(previous.actor,actor);
   }
+  
   function visibleHistory(history){
     const last=new Map();
     return history.filter(h=>{
@@ -100,8 +115,8 @@
       return h.action!=='edit'||!repeatsEdit(previous,h.from,h.to,h.comment,h.actor);
     });
   }
+  
   function undoneEditIds(history){
-    // Derive display state from the saved event links; never rewrite history.
     const undone=new Set();
     for(const h of history){
       if(h.action==='undo')undone.add(h.relatedEventId);
@@ -109,19 +124,19 @@
     }
     return undone;
   }
+  
   function undoneHistoryIds(history){
     const undone=undoneEditIds(history),latestRedo=new Map();
     for(const h of history){
       if(h.action==='redo')latestRedo.set(h.relatedEventId,h.id);
       else if(h.action==='undo'&&latestRedo.has(h.relatedEventId)){
-        // Undo/Redo records link to the original edit. Mark the particular
-        // Redo being reversed as well; a later Redo is a separate event.
         undone.add(latestRedo.get(h.relatedEventId));
         latestRedo.delete(h.relatedEventId);
       }
     }
     return undone;
   }
+  
   class Editor {
     constructor(data,actor={id:'local',name:'Name not recorded',authentication:'local'}){
       this.actor=clone(actor);
@@ -157,6 +172,6 @@
       return [...touched].map(k=>{const c=this.cells.get(k);return {i:c.i,j:c.j,from:this.opened.get(k)||'unreviewed',to:c.classification,history:this.doc.history.slice(this.openedHistoryLength).filter(h=>key(...h.dot)===k)};}).sort(compare);
     }
   }
-  root.TargetCore={GRID,CLASSES,key,clone,compare,canonicalLongitude,atLatLng,bounds,parseDot,validate,compact,visibleHistory,undoneEditIds,undoneHistoryIds,Editor};
-  if(typeof module!=='undefined'&&module.exports)module.exports=root.TargetCore;
-})(typeof globalThis!=='undefined'?globalThis:this);
+  
+  return { GRID, CLASSES, key, clone, compare, canonicalLongitude, atLatLng, bounds, parseDot, validate, compact, visibleHistory, undoneEditIds, undoneHistoryIds, Editor };
+});
