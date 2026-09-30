@@ -4,6 +4,10 @@ on:
   push:
     paths:
       - 'euro-use-master-map.json'
+      - 'core.js'
+      - 'compact.js'
+      - '.github/workflows/compact-map.yml'
+  workflow_dispatch:
 
 jobs:
   compact:
