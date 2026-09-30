@@ -358,7 +358,7 @@ a {
 dialog {
   border:1px solid var(--border);
   border-radius:10px;
-  width:min(820px,94vw);
+  width:min(1080px,94vw);
   max-height:85vh;
   padding:22px;
   color:var(--ink)

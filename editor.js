@@ -1,7 +1,7 @@
 /* Browser editor. Requires Leaflet 1.9.4 and the shared core.js. */
 (async function(){
 'use strict';
-const APP_VERSION='v1.2.0';
+const APP_VERSION='v1.2.1';
 const C=TargetCore, G=C.GRID, $=id=>document.getElementById(id);
 document.title=`EBT Dot Safari · Target map editor · v${APP_VERSION}`;
 $('draft-status').textContent=`Standalone editor · v${APP_VERSION}`;
