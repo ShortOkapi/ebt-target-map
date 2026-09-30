@@ -4,7 +4,7 @@
   "grid": {
     "id": "ebt-dot-safari-legacy-v1",
     "dotH": 0.28,
-    "dotW": 0.42038216560509554,
+    "dotW": 0.42038216560509556,
     "minLat": -89.72,
     "minLon": -178.89171974522293,
     "longitudeWrap": 360,
@@ -14,9 +14,9 @@
     "maxRow": 641
   },
   "datasetId": "euro-use-curated-2026-09-17",
-  "revision": 8,
+  "revision": 29,
   "createdAt": "2026-09-17",
-  "updatedAt": "2026-09-28T20:11:01.081Z",
+  "updatedAt": "2026-09-29T23:47:53.131Z",
   "model": {
     "id": "euro-use",
     "name": "Euro-use area",
@@ -30232,7 +30232,7 @@
     {
       "i": 466,
       "j": 473,
-      "classification": "foreign",
+      "classification": "unreviewed",
       "provenance": [
         {
           "sourceId": "workbook-11",
@@ -30243,7 +30243,7 @@
     {
       "i": 466,
       "j": 474,
-      "classification": "eligible",
+      "classification": "foreign",
       "provenance": [
         {
           "sourceId": "workbook-11",
@@ -30947,7 +30947,7 @@
     {
       "i": 467,
       "j": 473,
-      "classification": "foreign",
+      "classification": "unreviewed",
       "provenance": [
         {
           "sourceId": "workbook-11",
@@ -30958,7 +30958,7 @@
     {
       "i": 467,
       "j": 474,
-      "classification": "eligible",
+      "classification": "unreviewed",
       "provenance": [
         {
           "sourceId": "workbook-11",
@@ -30969,7 +30969,7 @@
     {
       "i": 467,
       "j": 475,
-      "classification": "eligible",
+      "classification": "foreign",
       "provenance": [
         {
           "sourceId": "workbook-11",
@@ -30980,7 +30980,7 @@
     {
       "i": 467,
       "j": 476,
-      "classification": "eligible",
+      "classification": "foreign",
       "provenance": [
         {
           "sourceId": "workbook-11",
@@ -31673,7 +31673,7 @@
     {
       "i": 468,
       "j": 473,
-      "classification": "foreign",
+      "classification": "unreviewed",
       "provenance": [
         {
           "sourceId": "workbook-11",
@@ -31684,7 +31684,7 @@
     {
       "i": 468,
       "j": 474,
-      "classification": "eligible",
+      "classification": "foreign",
       "provenance": [
         {
           "sourceId": "workbook-11",
@@ -31695,7 +31695,7 @@
     {
       "i": 468,
       "j": 475,
-      "classification": "eligible",
+      "classification": "unreviewed",
       "provenance": [
         {
           "sourceId": "workbook-11",
@@ -31706,7 +31706,7 @@
     {
       "i": 468,
       "j": 476,
-      "classification": "eligible",
+      "classification": "unreviewed",
       "provenance": [
         {
           "sourceId": "workbook-11",
@@ -31717,7 +31717,7 @@
     {
       "i": 468,
       "j": 477,
-      "classification": "eligible",
+      "classification": "foreign",
       "provenance": [
         {
           "sourceId": "workbook-11",
@@ -31728,7 +31728,7 @@
     {
       "i": 468,
       "j": 478,
-      "classification": "eligible",
+      "classification": "foreign",
       "provenance": [
         {
           "sourceId": "workbook-11",
@@ -32465,7 +32465,7 @@
     {
       "i": 469,
       "j": 475,
-      "classification": "eligible",
+      "classification": "foreign",
       "provenance": [
         {
           "sourceId": "workbook-11",
@@ -32476,7 +32476,7 @@
     {
       "i": 469,
       "j": 476,
-      "classification": "eligible",
+      "classification": "foreign",
       "provenance": [
         {
           "sourceId": "workbook-11",
@@ -32487,7 +32487,7 @@
     {
       "i": 469,
       "j": 477,
-      "classification": "eligible",
+      "classification": "unreviewed",
       "provenance": [
         {
           "sourceId": "workbook-11",
@@ -32498,7 +32498,7 @@
     {
       "i": 469,
       "j": 478,
-      "classification": "eligible",
+      "classification": "unreviewed",
       "provenance": [
         {
           "sourceId": "workbook-11",
@@ -32509,7 +32509,7 @@
     {
       "i": 469,
       "j": 479,
-      "classification": "eligible",
+      "classification": "foreign",
       "provenance": [
         {
           "sourceId": "workbook-11",
@@ -33345,7 +33345,7 @@
     {
       "i": 470,
       "j": 477,
-      "classification": "eligible",
+      "classification": "foreign",
       "provenance": [
         {
           "sourceId": "workbook-11",
@@ -33356,7 +33356,7 @@
     {
       "i": 470,
       "j": 478,
-      "classification": "eligible",
+      "classification": "foreign",
       "provenance": [
         {
           "sourceId": "workbook-11",
@@ -72266,6 +72266,364 @@
       "from": "eligible",
       "to": "sea",
       "comment": "no land, no comment",
+      "action": "edit",
+      "actor": {
+        "id": "local",
+        "name": "lmviterbo",
+        "authentication": "local"
+      }
+    },
+    {
+      "id": "r9-1790725220949-qrxzsc0",
+      "dot": [
+        470,
+        477
+      ],
+      "at": "2026-09-29T23:40:20.949Z",
+      "from": "eligible",
+      "to": "foreign",
+      "comment": "North Macedonia",
+      "action": "edit",
+      "actor": {
+        "id": "local",
+        "name": "lmviterbo",
+        "authentication": "local"
+      }
+    },
+    {
+      "id": "r10-1790725246981-55y7ajx",
+      "dot": [
+        470,
+        478
+      ],
+      "at": "2026-09-29T23:40:46.981Z",
+      "from": "eligible",
+      "to": "foreign",
+      "comment": "North Macedonia",
+      "action": "edit",
+      "actor": {
+        "id": "local",
+        "name": "lmviterbo",
+        "authentication": "local"
+      }
+    },
+    {
+      "id": "r11-1790725283014-80ugsfe",
+      "dot": [
+        469,
+        475
+      ],
+      "at": "2026-09-29T23:41:23.014Z",
+      "from": "eligible",
+      "to": "foreign",
+      "comment": "North Macedonia",
+      "action": "edit",
+      "actor": {
+        "id": "local",
+        "name": "lmviterbo",
+        "authentication": "local"
+      }
+    },
+    {
+      "id": "r12-1790725296110-ldh1exx",
+      "dot": [
+        468,
+        474
+      ],
+      "at": "2026-09-29T23:41:36.110Z",
+      "from": "eligible",
+      "to": "foreign",
+      "comment": "North Macedonia",
+      "action": "edit",
+      "actor": {
+        "id": "local",
+        "name": "lmviterbo",
+        "authentication": "local"
+      }
+    },
+    {
+      "id": "r13-1790725351490-8vj0itr",
+      "dot": [
+        468,
+        473
+      ],
+      "at": "2026-09-29T23:42:31.490Z",
+      "from": "foreign",
+      "to": "unreviewed",
+      "comment": "outside red borders",
+      "action": "edit",
+      "actor": {
+        "id": "local",
+        "name": "lmviterbo",
+        "authentication": "local"
+      }
+    },
+    {
+      "id": "r14-1790725390813-w49am1g",
+      "dot": [
+        467,
+        475
+      ],
+      "at": "2026-09-29T23:43:10.813Z",
+      "from": "eligible",
+      "to": "foreign",
+      "comment": "North Macedonia",
+      "action": "edit",
+      "actor": {
+        "id": "local",
+        "name": "lmviterbo",
+        "authentication": "local"
+      }
+    },
+    {
+      "id": "r15-1790725428124-be2sro2",
+      "dot": [
+        466,
+        474
+      ],
+      "at": "2026-09-29T23:43:48.123Z",
+      "from": "eligible",
+      "to": "foreign",
+      "comment": "Albania",
+      "action": "edit",
+      "actor": {
+        "id": "local",
+        "name": "lmviterbo",
+        "authentication": "local"
+      }
+    },
+    {
+      "id": "r16-1790725442462-wy5h851",
+      "dot": [
+        467,
+        473
+      ],
+      "at": "2026-09-29T23:44:02.462Z",
+      "from": "foreign",
+      "to": "unreviewed",
+      "comment": "outside red borders",
+      "action": "edit",
+      "actor": {
+        "id": "local",
+        "name": "lmviterbo",
+        "authentication": "local"
+      }
+    },
+    {
+      "id": "r17-1790725453819-v0k344t",
+      "dot": [
+        466,
+        473
+      ],
+      "at": "2026-09-29T23:44:13.819Z",
+      "from": "foreign",
+      "to": "unreviewed",
+      "comment": "outside red borders",
+      "action": "edit",
+      "actor": {
+        "id": "local",
+        "name": "lmviterbo",
+        "authentication": "local"
+      }
+    },
+    {
+      "id": "r18-1790725473442-wxkei3q",
+      "dot": [
+        467,
+        474
+      ],
+      "at": "2026-09-29T23:44:33.442Z",
+      "from": "eligible",
+      "to": "unreviewed",
+      "comment": "outside red borders",
+      "action": "edit",
+      "actor": {
+        "id": "local",
+        "name": "lmviterbo",
+        "authentication": "local"
+      }
+    },
+    {
+      "id": "r19-1790725498568-3xp5y0r",
+      "dot": [
+        469,
+        476
+      ],
+      "at": "2026-09-29T23:44:58.568Z",
+      "from": "eligible",
+      "to": "foreign",
+      "comment": "North Macedonia",
+      "action": "edit",
+      "actor": {
+        "id": "local",
+        "name": "lmviterbo",
+        "authentication": "local"
+      }
+    },
+    {
+      "id": "r20-1790725532616-t9nvnl5",
+      "dot": [
+        467,
+        476
+      ],
+      "at": "2026-09-29T23:45:32.616Z",
+      "from": "eligible",
+      "to": "foreign",
+      "comment": "North Macedonia",
+      "action": "edit",
+      "actor": {
+        "id": "local",
+        "name": "lmviterbo",
+        "authentication": "local"
+      }
+    },
+    {
+      "id": "r21-1790725542962-ut6a0yw",
+      "dot": [
+        468,
+        477
+      ],
+      "at": "2026-09-29T23:45:42.962Z",
+      "from": "eligible",
+      "to": "foreign",
+      "comment": "North Macedonia",
+      "action": "edit",
+      "actor": {
+        "id": "local",
+        "name": "lmviterbo",
+        "authentication": "local"
+      }
+    },
+    {
+      "id": "r22-1790725560555-ekwf4p1",
+      "dot": [
+        468,
+        475
+      ],
+      "at": "2026-09-29T23:46:00.555Z",
+      "from": "eligible",
+      "to": "unreviewed",
+      "comment": "outside red borders",
+      "action": "edit",
+      "actor": {
+        "id": "local",
+        "name": "lmviterbo",
+        "authentication": "local"
+      }
+    },
+    {
+      "id": "r23-1790725579810-z5nglbc",
+      "dot": [
+        468,
+        476
+      ],
+      "at": "2026-09-29T23:46:19.810Z",
+      "from": "eligible",
+      "to": "foreign",
+      "comment": "outside red borders",
+      "action": "edit",
+      "actor": {
+        "id": "local",
+        "name": "lmviterbo",
+        "authentication": "local"
+      }
+    },
+    {
+      "id": "r24-1790725585748-egessl9",
+      "dot": [
+        468,
+        476
+      ],
+      "at": "2026-09-29T23:46:25.748Z",
+      "from": "foreign",
+      "to": "eligible",
+      "comment": "Undo: outside red borders",
+      "action": "undo",
+      "actor": {
+        "id": "local",
+        "name": "lmviterbo",
+        "authentication": "local"
+      },
+      "relatedEventId": "r23-1790725579810-z5nglbc"
+    },
+    {
+      "id": "r25-1790725598355-q1qnxio",
+      "dot": [
+        468,
+        476
+      ],
+      "at": "2026-09-29T23:46:38.355Z",
+      "from": "eligible",
+      "to": "unreviewed",
+      "comment": "outside red borders",
+      "action": "edit",
+      "actor": {
+        "id": "local",
+        "name": "lmviterbo",
+        "authentication": "local"
+      }
+    },
+    {
+      "id": "r26-1790725627457-tq9ia1z",
+      "dot": [
+        468,
+        478
+      ],
+      "at": "2026-09-29T23:47:07.457Z",
+      "from": "eligible",
+      "to": "foreign",
+      "comment": "North Macedonia",
+      "action": "edit",
+      "actor": {
+        "id": "local",
+        "name": "lmviterbo",
+        "authentication": "local"
+      }
+    },
+    {
+      "id": "r27-1790725647806-55bjfhn",
+      "dot": [
+        469,
+        479
+      ],
+      "at": "2026-09-29T23:47:27.806Z",
+      "from": "eligible",
+      "to": "foreign",
+      "comment": "North Macedonia",
+      "action": "edit",
+      "actor": {
+        "id": "local",
+        "name": "lmviterbo",
+        "authentication": "local"
+      }
+    },
+    {
+      "id": "r28-1790725666726-1ehkk54",
+      "dot": [
+        469,
+        477
+      ],
+      "at": "2026-09-29T23:47:46.726Z",
+      "from": "eligible",
+      "to": "unreviewed",
+      "comment": "outside red borders",
+      "action": "edit",
+      "actor": {
+        "id": "local",
+        "name": "lmviterbo",
+        "authentication": "local"
+      }
+    },
+    {
+      "id": "r29-1790725673131-amuul06",
+      "dot": [
+        469,
+        478
+      ],
+      "at": "2026-09-29T23:47:53.131Z",
+      "from": "eligible",
+      "to": "unreviewed",
+      "comment": "outside red borders",
       "action": "edit",
       "actor": {
         "id": "local",
