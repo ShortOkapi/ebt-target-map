@@ -4,9 +4,9 @@
   "grid": {
     "id": "ebt-dot-safari-legacy-v1",
     "dotH": 0.28,
-    "dotW": 0.42038216560509556,
+    "dotW": 0.4203821656,
     "minLat": -89.72,
-    "minLon": -178.89171974522293,
+    "minLon": -178.8917197452,
     "longitudeWrap": 360,
     "minColumn": -3,
     "maxColumn": 853,
