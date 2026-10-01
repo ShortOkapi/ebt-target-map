@@ -1,6 +1,6 @@
 # EBT Target Map
 
-Target-area datasets and editing tools for [EBT Dot Safari](https://github.com/ShortOkapi/ebt-dot-safari), covering the curated Euro-use map and a worldwide land model based on OpenStreetMap.
+Target-area datasets and editing tools for [EBT Dot Safari](https://github.com/ShortOkapi/ebt-dot-safari), covering the curated Euro-use map.
 
 [Open EBT Target Map](https://shortokapi.github.io/ebt-target-map)
 
@@ -22,14 +22,6 @@ The map editor allows curators to visually assign eligibility statuses (Conquera
 2.  **Reviewing:** Editors can generate a visual HTML Change Report summarizing their session's actions, which can be saved or shared.
 3.  **Publishing:** Clicking "Publish" prompts for a GitHub Personal Access Token. The editor uses the GitHub API to push the updated `euro-use-master-map.json` directly to the `main` branch.
 4.  **Automation:** The push triggers a GitHub Action (`compact-map.yml`) that runs `compact.js`, generating and committing a fresh `euro-use-eligibility.json` file.
-
-## Local Development
-
-To run the editor locally, you need a local server to bypass browser CORS restrictions for loading the local JSON files. 
-
-1. Clone or download the repository.
-2. Open a terminal in the project folder and start a Python HTTP server: `python -m http.server 8001`
-3. Open your browser and navigate to `http://localhost:8001`.
 
 ## Provenance & Credits
 
