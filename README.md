@@ -1,8 +1,8 @@
-# EBT Target Maps
+# EBT Target Map
 
 Target-area datasets and editing tools for [EBT Dot Safari](https://github.com/ShortOkapi/ebt-dot-safari), covering the curated Euro-use map and a worldwide land model based on OpenStreetMap.
 
-[Open EBT Target Maps](https://shortokapi.github.io/ebt-target-maps)
+[Open EBT Target Map](https://shortokapi.github.io/ebt-target-map)
 
 ## Project Architecture
 

@@ -538,7 +538,7 @@ $('publish-map').onclick = async () => {
 
   status("Publishing to GitHub...");
   try {
-    const repo = 'ShortOkapi/ebt-target-maps';
+    const repo = 'ShortOkapi/ebt-target-map';
     const path = 'euro-use-master-map.json';
 
     // 1. Find the exact file currently on GitHub so we can safely overwrite it
