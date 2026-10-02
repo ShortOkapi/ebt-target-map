@@ -4,7 +4,7 @@
   "grid": {
     "id": "ebt-dot-safari-legacy-v1",
     "dotH": 0.28,
-    "dotW": 0.42038216560509554,
+    "dotW": 0.42038216560509556,
     "minLat": -89.72,
     "minLon": -178.89171974522293,
     "longitudeWrap": 360,
@@ -14,9 +14,9 @@
     "maxRow": 641
   },
   "datasetId": "euro-use-curated-2026-09-17",
-  "revision": 29,
+  "revision": 39,
   "createdAt": "2026-09-17",
-  "updatedAt": "2026-09-29T23:47:53.131Z",
+  "updatedAt": "2026-10-01T22:53:28.566Z",
   "model": {
     "id": "euro-use",
     "name": "Euro-use area",
@@ -50945,7 +50945,7 @@
     {
       "i": 496,
       "j": 419,
-      "classification": "sea",
+      "classification": "unreviewed",
       "provenance": [
         {
           "sourceId": "workbook-11",
@@ -53661,6 +53661,12 @@
     },
     {
       "i": 502,
+      "j": 402,
+      "classification": "sea",
+      "provenance": []
+    },
+    {
+      "i": 502,
       "j": 428,
       "classification": "foreign",
       "provenance": [
@@ -54058,7 +54064,7 @@
     {
       "i": 503,
       "j": 402,
-      "classification": "sea",
+      "classification": "eligible",
       "provenance": [
         {
           "sourceId": "workbook-08",
@@ -54564,7 +54570,7 @@
     {
       "i": 504,
       "j": 431,
-      "classification": "sea",
+      "classification": "eligible",
       "provenance": [
         {
           "sourceId": "workbook-11",
@@ -58431,8 +58437,14 @@
     },
     {
       "i": 513,
-      "j": 400,
+      "j": 399,
       "classification": "sea",
+      "provenance": []
+    },
+    {
+      "i": 513,
+      "j": 400,
+      "classification": "eligible",
       "provenance": [
         {
           "sourceId": "workbook-08",
@@ -63547,7 +63559,7 @@
     {
       "i": 533,
       "j": 472,
-      "classification": "sea",
+      "classification": "foreign",
       "provenance": [
         {
           "sourceId": "workbook-07",
@@ -63745,7 +63757,7 @@
     {
       "i": 533,
       "j": 490,
-      "classification": "foreign",
+      "classification": "sea",
       "provenance": [
         {
           "sourceId": "workbook-07",
@@ -63954,7 +63966,7 @@
     {
       "i": 534,
       "j": 486,
-      "classification": "sea",
+      "classification": "excluded",
       "provenance": [
         {
           "sourceId": "workbook-07",
@@ -68331,6 +68343,12 @@
     },
     {
       "i": 551,
+      "j": 481,
+      "classification": "sea",
+      "provenance": []
+    },
+    {
+      "i": 551,
       "j": 482,
       "classification": "sea",
       "provenance": [
@@ -72624,6 +72642,176 @@
       "from": "eligible",
       "to": "unreviewed",
       "comment": "outside red borders",
+      "action": "edit",
+      "actor": {
+        "id": "local",
+        "name": "lmviterbo",
+        "authentication": "local"
+      }
+    },
+    {
+      "id": "r30-1790893319464-iz3ycv1",
+      "dot": [
+        534,
+        486
+      ],
+      "at": "2026-10-01T22:21:59.464Z",
+      "from": "sea",
+      "to": "excluded",
+      "comment": "Stora Kölhällen (skerry at 60.0756, 25.6380) + a few reefs and islets, all impossible to visit or even drop an anchor nearby.",
+      "action": "edit",
+      "actor": {
+        "id": "local",
+        "name": "lmviterbo",
+        "authentication": "local"
+      }
+    },
+    {
+      "id": "r31-1790893714003-vh6kqhl",
+      "dot": [
+        533,
+        490
+      ],
+      "at": "2026-10-01T22:28:34.003Z",
+      "from": "foreign",
+      "to": "sea",
+      "comment": "no land",
+      "action": "edit",
+      "actor": {
+        "id": "local",
+        "name": "lmviterbo",
+        "authentication": "local"
+      }
+    },
+    {
+      "id": "r32-1790894084908-njdpg4n",
+      "dot": [
+        533,
+        472
+      ],
+      "at": "2026-10-01T22:34:44.908Z",
+      "from": "sea",
+      "to": "foreign",
+      "comment": "Skarvs Skarsgård, Stora Vitkobben, Svenska Björn, and other islands and islets (Sweden)",
+      "action": "edit",
+      "actor": {
+        "id": "local",
+        "name": "lmviterbo",
+        "authentication": "local"
+      }
+    },
+    {
+      "id": "r33-1790894158662-22kl10d",
+      "dot": [
+        551,
+        481
+      ],
+      "at": "2026-10-01T22:35:58.662Z",
+      "from": "unreviewed",
+      "to": "sea",
+      "comment": "no comment",
+      "action": "edit",
+      "actor": {
+        "id": "local",
+        "name": "lmviterbo",
+        "authentication": "local"
+      }
+    },
+    {
+      "id": "r34-1790894728018-831xdhc",
+      "dot": [
+        504,
+        431
+      ],
+      "at": "2026-10-01T22:45:28.018Z",
+      "from": "sea",
+      "to": "eligible",
+      "comment": "Princess Elisabeth Island (Belgian artificial energy island under construction).",
+      "action": "edit",
+      "actor": {
+        "id": "local",
+        "name": "lmviterbo",
+        "authentication": "local"
+      }
+    },
+    {
+      "id": "r35-1790894874729-jhkgs89",
+      "dot": [
+        496,
+        419
+      ],
+      "at": "2026-10-01T22:47:54.729Z",
+      "from": "sea",
+      "to": "unreviewed",
+      "comment": "outside red borders",
+      "action": "edit",
+      "actor": {
+        "id": "local",
+        "name": "lmviterbo",
+        "authentication": "local"
+      }
+    },
+    {
+      "id": "r36-1790895103735-gujlekj",
+      "dot": [
+        513,
+        400
+      ],
+      "at": "2026-10-01T22:51:43.735Z",
+      "from": "sea",
+      "to": "eligible",
+      "comment": "An Tor island, with Blackrock (Co Mayo) Lighthouse.",
+      "action": "edit",
+      "actor": {
+        "id": "local",
+        "name": "lmviterbo",
+        "authentication": "local"
+      }
+    },
+    {
+      "id": "r37-1790895132529-gi03v9p",
+      "dot": [
+        513,
+        399
+      ],
+      "at": "2026-10-01T22:52:12.529Z",
+      "from": "unreviewed",
+      "to": "sea",
+      "comment": "no comment",
+      "action": "edit",
+      "actor": {
+        "id": "local",
+        "name": "lmviterbo",
+        "authentication": "local"
+      }
+    },
+    {
+      "id": "r38-1790895196848-0ixv66g",
+      "dot": [
+        503,
+        402
+      ],
+      "at": "2026-10-01T22:53:16.848Z",
+      "from": "sea",
+      "to": "eligible",
+      "comment": "Fastnet Rock, w/ Fastnet Lighthouse.",
+      "action": "edit",
+      "actor": {
+        "id": "local",
+        "name": "lmviterbo",
+        "authentication": "local"
+      }
+    },
+    {
+      "id": "r39-1790895208566-kqq6u84",
+      "dot": [
+        502,
+        402
+      ],
+      "at": "2026-10-01T22:53:28.566Z",
+      "from": "unreviewed",
+      "to": "sea",
+      "comment": "no comment",
       "action": "edit",
       "actor": {
         "id": "local",
