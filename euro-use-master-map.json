@@ -14,9 +14,9 @@
     "maxRow": 641
   },
   "datasetId": "euro-use-curated-2026-09-17",
-  "revision": 47,
+  "revision": 56,
   "createdAt": "2026-09-17",
-  "updatedAt": "2026-10-11T12:57:39.966Z",
+  "updatedAt": "2026-10-12T16:47:42.327Z",
   "model": {
     "id": "euro-use",
     "name": "Euro-use area",
@@ -15015,7 +15015,7 @@
     {
       "i": 330,
       "j": 299,
-      "classification": "eligible",
+      "classification": "excluded",
       "provenance": [
         {
           "sourceId": "workbook-05",
@@ -15048,7 +15048,7 @@
     {
       "i": 331,
       "j": 295,
-      "classification": "foreign",
+      "classification": "unreviewed",
       "provenance": [
         {
           "sourceId": "workbook-05",
@@ -15059,7 +15059,7 @@
     {
       "i": 331,
       "j": 296,
-      "classification": "eligible",
+      "classification": "excluded",
       "provenance": [
         {
           "sourceId": "workbook-05",
@@ -15070,7 +15070,7 @@
     {
       "i": 331,
       "j": 297,
-      "classification": "eligible",
+      "classification": "excluded",
       "provenance": [
         {
           "sourceId": "workbook-05",
@@ -15169,7 +15169,7 @@
     {
       "i": 332,
       "j": 298,
-      "classification": "eligible",
+      "classification": "excluded",
       "provenance": [
         {
           "sourceId": "workbook-05",
@@ -15279,7 +15279,7 @@
     {
       "i": 333,
       "j": 300,
-      "classification": "eligible",
+      "classification": "excluded",
       "provenance": [
         {
           "sourceId": "workbook-05",
@@ -34254,7 +34254,7 @@
     {
       "i": 471,
       "j": 477,
-      "classification": "eligible",
+      "classification": "excluded",
       "provenance": [
         {
           "sourceId": "workbook-11",
@@ -72966,6 +72966,160 @@
       "from": "sea",
       "to": "unreviewed",
       "comment": "no comment",
+      "action": "edit",
+      "actor": {
+        "id": "local",
+        "name": "lmviterbo",
+        "authentication": "local"
+      }
+    },
+    {
+      "id": "r48-1791759974313-4wrznv8",
+      "dot": [
+        330,
+        299
+      ],
+      "at": "2026-10-11T23:06:14.313Z",
+      "from": "eligible",
+      "to": "excluded",
+      "comment": "No named places other than waterfalls on the Camopi and Tamouri rivers. In the Zone d’Accès Réglementé (ZAR).",
+      "action": "edit",
+      "actor": {
+        "id": "local",
+        "name": "lmviterbo",
+        "authentication": "local"
+      }
+    },
+    {
+      "id": "r49-1791762295604-v4l5097",
+      "dot": [
+        331,
+        296
+      ],
+      "at": "2026-10-11T23:44:55.604Z",
+      "from": "eligible",
+      "to": "excluded",
+      "comment": "In French Guiana, no named places other than waterways in the Zone d’Accès Réglementé (ZAR). Pleiké in Suriname.",
+      "action": "edit",
+      "actor": {
+        "id": "local",
+        "name": "lmviterbo",
+        "authentication": "local"
+      }
+    },
+    {
+      "id": "r50-1791762310316-wyclgcf",
+      "dot": [
+        331,
+        295
+      ],
+      "at": "2026-10-11T23:45:10.316Z",
+      "from": "foreign",
+      "to": "unreviewed",
+      "comment": "no comment",
+      "action": "edit",
+      "actor": {
+        "id": "local",
+        "name": "lmviterbo",
+        "authentication": "local"
+      }
+    },
+    {
+      "id": "r51-1791762674561-zp8aoi3",
+      "dot": [
+        331,
+        297
+      ],
+      "at": "2026-10-11T23:51:14.561Z",
+      "from": "eligible",
+      "to": "excluded",
+      "comment": "No named places other than waterways in the Zone d’Accès Réglementé (ZAR).",
+      "action": "edit",
+      "actor": {
+        "id": "local",
+        "name": "lmviterbo",
+        "authentication": "local"
+      }
+    },
+    {
+      "id": "r52-1791763446412-hmw2ysw",
+      "dot": [
+        331,
+        298
+      ],
+      "at": "2026-10-12T00:04:06.412Z",
+      "from": "eligible",
+      "to": "excluded",
+      "comment": "No named places other than waterways in the Zone d’Accès Réglementé (ZAR).",
+      "action": "edit",
+      "actor": {
+        "id": "local",
+        "name": "lmviterbo",
+        "authentication": "local"
+      }
+    },
+    {
+      "id": "r53-1791763458335-czqw2xz",
+      "dot": [
+        331,
+        298
+      ],
+      "at": "2026-10-12T00:04:18.335Z",
+      "from": "excluded",
+      "to": "eligible",
+      "comment": "Undo: No named places other than waterways in the Zone d’Accès Réglementé (ZAR).",
+      "action": "undo",
+      "actor": {
+        "id": "local",
+        "name": "lmviterbo",
+        "authentication": "local"
+      },
+      "relatedEventId": "r52-1791763446412-hmw2ysw"
+    },
+    {
+      "id": "r54-1791792705938-idifcj1",
+      "dot": [
+        332,
+        298
+      ],
+      "at": "2026-10-12T08:11:45.938Z",
+      "from": "eligible",
+      "to": "excluded",
+      "comment": "No named places other than waterways and three minor peaks in the Zone d’Accès Réglementé (ZAR) or the Guiana Amazonian Park.",
+      "action": "edit",
+      "actor": {
+        "id": "local",
+        "name": "lmviterbo",
+        "authentication": "local"
+      }
+    },
+    {
+      "id": "r55-1791796330476-c52aayx",
+      "dot": [
+        333,
+        300
+      ],
+      "at": "2026-10-12T09:12:10.476Z",
+      "from": "eligible",
+      "to": "excluded",
+      "comment": "No named places other than waterways. Half this territory in the Réserve biologique intégrale des Pitons rocheaux de l'Armontabo.",
+      "action": "edit",
+      "actor": {
+        "id": "local",
+        "name": "lmviterbo",
+        "authentication": "local"
+      }
+    },
+    {
+      "id": "r56-1791823662327-uclv7n7",
+      "dot": [
+        471,
+        477
+      ],
+      "at": "2026-10-12T16:47:42.327Z",
+      "from": "eligible",
+      "to": "excluded",
+      "comment": "No named places in Kosovo other than waterways and a peak shared with Serbia.",
       "action": "edit",
       "actor": {
         "id": "local",
