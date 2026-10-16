@@ -77,13 +77,15 @@
   }
   function compact(data) {
     validate(data);
-    const ranges=[];
-    for(const c of data.cells.filter(c=>c.classification==='eligible').sort(compare)){
-      const last=ranges[ranges.length-1];
+    const ranges=[],classifications={formatVersion:1,excluded:[],foreign:[],sea:[],unreviewed:[]};
+    const eligible=data.cells.filter(c=>c.classification==='eligible').length;
+    for(const c of data.cells.slice().sort(compare)){
+      const list=c.classification==='eligible'?ranges:classifications[c.classification];
+      const last=list[list.length-1];
       if(last&&last[0]===c.i&&last[2]+1===c.j) last[2]=c.j;
-      else ranges.push([c.i,c.j,c.j]);
+      else list.push([c.i,c.j,c.j]);
     }
-    return {format:'ebt-target-ranges',formatVersion:1,grid:clone(GRID),model:'euro-use',datasetId:data.datasetId,revision:data.revision,eligibleCount:data.cells.filter(c=>c.classification==='eligible').length,ranges};
+    return {format:'ebt-target-ranges',formatVersion:1,grid:clone(GRID),model:'euro-use',datasetId:data.datasetId,revision:data.revision,eligibleCount:eligible,ranges,classifications};
   }
   function sameEditor(a,b){
     const name=a?.name.trim();
