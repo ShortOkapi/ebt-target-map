@@ -14,9 +14,9 @@
     "maxRow": 641
   },
   "datasetId": "euro-use-curated-2026-09-17",
-  "revision": 57,
+  "revision": 59,
   "createdAt": "2026-09-17",
-  "updatedAt": "2026-10-12T18:21:54.690Z",
+  "updatedAt": "2026-10-16T12:53:15.539Z",
   "model": {
     "id": "euro-use",
     "name": "Euro-use area",
@@ -54587,6 +54587,12 @@
     },
     {
       "i": 504,
+      "j": 430,
+      "classification": "sea",
+      "provenance": []
+    },
+    {
+      "i": 504,
       "j": 431,
       "classification": "eligible",
       "provenance": [
@@ -55068,6 +55074,12 @@
           "cell": "Q23"
         }
       ]
+    },
+    {
+      "i": 505,
+      "j": 431,
+      "classification": "sea",
+      "provenance": []
     },
     {
       "i": 505,
@@ -73137,6 +73149,40 @@
       "from": "eligible",
       "to": "excluded",
       "comment": "No significant named place her. Also, in in the Zone d’Accès Réglementé (ZAR).",
+      "action": "edit",
+      "actor": {
+        "id": "local",
+        "name": "lmviterbo",
+        "authentication": "local"
+      }
+    },
+    {
+      "id": "r58-1792155186549-v0hgfg9",
+      "dot": [
+        504,
+        430
+      ],
+      "at": "2026-10-16T12:53:06.549Z",
+      "from": "unreviewed",
+      "to": "sea",
+      "comment": "no comment",
+      "action": "edit",
+      "actor": {
+        "id": "local",
+        "name": "lmviterbo",
+        "authentication": "local"
+      }
+    },
+    {
+      "id": "r59-1792155195539-30seizm",
+      "dot": [
+        505,
+        431
+      ],
+      "at": "2026-10-16T12:53:15.539Z",
+      "from": "unreviewed",
+      "to": "sea",
+      "comment": "no comment",
       "action": "edit",
       "actor": {
         "id": "local",
