@@ -1,7 +1,7 @@
 /* Browser editor. Requires Leaflet 1.9.4 and the shared core.js. */
 (async function(){
 'use strict';
-const APP_VERSION='1.2.2-rc1';
+const APP_VERSION='1.3.0-rc1';
 const C=TargetCore, G=C.GRID, $=id=>document.getElementById(id);
 document.title=`EBT Dot Safari · Target map editor · v${APP_VERSION}`;
 $('draft-status').textContent=`Standalone editor · v${APP_VERSION}`;
@@ -73,7 +73,7 @@ for(const sourceLayer of [osm,esri]){
   sourceLayer.on('tileload',()=>{if(background===sourceLayer)$('map-message').hidden=true;});
 }
 
-function rebuildRows(){rows=new Map();for(const c of editor.cells.values()){if(!rows.has(c.i))rows.set(c.i,[]);rows.get(c.i).push(c);}}
+function rebuildRows(){rows=editor.rowRuns();}
 rebuildRows();
 
 // Crossed lines retain contrast at low opacity; zero still hides the overlay.
@@ -107,15 +107,17 @@ const TargetLayer=L.GridLayer.extend({createTile(coords){
   const b=this._tileCoordsToBounds(coords),nw=map.project(b.getNorthWest(),coords.z);
   const i0=Math.floor((b.getSouth()-G.minLat)/G.dotH),i1=Math.floor((b.getNorth()-G.minLat)/G.dotH);
   const j0=Math.floor((b.getWest()-G.minLon)/G.dotW),j1=Math.floor((b.getEast()-G.minLon)/G.dotW);
-  function rect(i,j){const x=map.project([G.minLat+(i+1)*G.dotH,G.minLon+j*G.dotW],coords.z).subtract(nw),y=map.project([G.minLat+i*G.dotH,G.minLon+(j+1)*G.dotW],coords.z).subtract(nw);return [x.x,x.y,y.x-x.x,y.y-x.y];}
+  function rect(i,j,lastJ=j){const x=map.project([G.minLat+(i+1)*G.dotH,G.minLon+j*G.dotW],coords.z).subtract(nw),y=map.project([G.minLat+i*G.dotH,G.minLon+(lastJ+1)*G.dotW],coords.z).subtract(nw);return [x.x,x.y,y.x-x.x,y.y-x.y];}
   for(let i=i0;i<=i1;i++)for(const c of rows.get(i)||[]){
-    if(c.j<j0||c.j>j1||c.classification==='unreviewed'||overlayOpacity===0)continue;
-    const r=rect(i,c.j);ctx.fillStyle=C.CLASSES[c.classification].color;ctx.globalAlpha=overlayOpacity;ctx.fillRect(...r);ctx.globalAlpha=1;
+    if(c.last<j0||c.first>j1||c.classification==='unreviewed'||overlayOpacity===0)continue;
+    const r=rect(i,Math.max(c.first,j0),Math.min(c.last,j1));ctx.fillStyle=C.CLASSES[c.classification].color;ctx.globalAlpha=overlayOpacity;ctx.fillRect(...r);ctx.globalAlpha=1;
     if(c.classification==='excluded')drawExcludedHatch(ctx,r,size,overlayOpacity);
     if(c.classification==='sea'){
-      ctx.save();ctx.beginPath();ctx.rect(...r);ctx.clip();ctx.globalAlpha=Math.min(.85,overlayOpacity*1.8);ctx.strokeStyle='#28629C';ctx.lineWidth=1;
-      for(let x=Math.floor((r[0]-r[3])/9)*9;x<r[0]+r[2];x+=9){ctx.beginPath();ctx.moveTo(x,r[1]+r[3]);ctx.lineTo(x+r[3],r[1]);ctx.stroke();}
-      ctx.strokeRect(r[0]+.5,r[1]+.5,r[2]-1,r[3]-1);ctx.restore();
+      const left=Math.max(0,r[0]),top=Math.max(0,r[1]),right=Math.min(size.x,r[0]+r[2]),bottom=Math.min(size.y,r[1]+r[3]);
+      if(right<=left||bottom<=top)continue;
+      ctx.save();ctx.beginPath();ctx.rect(left,top,right-left,bottom-top);ctx.clip();ctx.globalAlpha=Math.min(.85,overlayOpacity*1.8);ctx.strokeStyle='#28629C';ctx.lineWidth=1;
+      for(let x=Math.floor((left-bottom)/9)*9;x<=right-top;x+=9){ctx.beginPath();ctx.moveTo(x+bottom,bottom);ctx.lineTo(x+top,top);ctx.stroke();}
+      ctx.restore();
     }
   }
   if(coords.z>=6){
@@ -170,7 +172,8 @@ function renderSelection(){
   const b=C.bounds(i,j);$('bounds').replaceChildren();add($('bounds'),'div',`Latitude ${b.south.toFixed(4)}° to ${b.north.toFixed(4)}°`);add($('bounds'),'div',`Longitude ${b.west.toFixed(4)}° to ${b.east.toFixed(4)}°`);
   $('classification').value=classification;$('reason').value='';$('save-change').textContent=`Save change for [${i}, ${j}]`;$('form-error').textContent='';
   $('source-info').replaceChildren();const refs=sourceRefs(i,j);
-  if(!refs.length)add($('source-info'),'p','No source cell is recorded here. This dot starts as unreviewed.','muted');
+  if(!editor.cells.has(C.key(i,j))&&editor.background)add($('source-info'),'p','Automatic worldwide background: land is Foreign; no-land is Water Only. This dot has no individual decision recorded.','muted');
+  if(!refs.length)add($('source-info'),'p',editor.background?'No original spreadsheet cell is recorded here.':'No source cell is recorded here. This dot starts as unreviewed.','muted');
   else{const list=add($('source-info'),'ul',undefined,'sources-list');for(const ref of refs){const source=editor.doc.sources.find(s=>s.id===ref.sourceId);add(list,'li',`${source.filename} · ${source.sheet}!${ref.cell}${ref.uncoloured?' (uncoloured in source)':''}`);}}
   $('history').replaceChildren();const history=C.visibleHistory(editor.doc.history.filter(h=>h.dot[0]===i&&h.dot[1]===j));$('history-count').textContent=history.length?`(${history.length})`:'';
   const undone=C.undoneHistoryIds(history);
@@ -200,7 +203,7 @@ function populateSources(){
       $('region').append(new Option(s.filename, s.id));
     }
   });
-  $('dataset-info').replaceChildren();add($('dataset-info'),'p',`Standalone editor · v${APP_VERSION}`);add($('dataset-info'),'p',`Dataset ${editor.doc.datasetId} · ${editor.doc.sources.length} source workbooks · ${editor.cells.size.toLocaleString('en-GB')} classified dots.`);
+  $('dataset-info').replaceChildren();add($('dataset-info'),'p',`Standalone editor · v${APP_VERSION}`);add($('dataset-info'),'p',`Dataset ${editor.doc.datasetId} · ${editor.doc.sources.length} source workbooks · ${editor.cells.size.toLocaleString('en-GB')} recorded dots${editor.background?' · worldwide background active':''}.`);
   add($('dataset-info'),'p',`Grid verified against PWA v${editor.doc.baseline?.appVersion||'2.0.4'}, commit ${editor.doc.baseline?.commit||'unrecorded'}.`);
   add($('dataset-info'),'p','Leaflet 1.9.4 © Vladimir Agafonkin and contributors (BSD-2-Clause). Editor code: MIT. Curated data provenance is retained in the JSON.');
 }

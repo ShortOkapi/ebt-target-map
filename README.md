@@ -23,6 +23,24 @@ The map editor allows curators to visually assign eligibility statuses (Conquera
 3.  **Publishing:** Clicking "Publish" prompts for a GitHub Personal Access Token. The editor uses the GitHub API to push the updated `euro-use-master-map.json` directly to the `main` branch.
 4.  **Automation:** The push triggers a GitHub Action (`compact-map.yml`) that runs `compact.js`, generating and committing a fresh `euro-use-eligibility.json` file.
 
+## Worldwide classification background
+
+Current test candidate: **1.3.0-rc1**.
+
+The current master map contains a compact snapshot of the separate [worldwide land model](https://github.com/ShortOkapi/ebt-world-land-map), including its manual overrides. Dots without an individual classification resolve to Foreign where that model contains land and Water Only elsewhere. An explicit classification always wins, including a deliberate Unreviewed decision. This background does not add eligible Euro-use targets or remove every inland lake.
+
+The 19 previously Unreviewed remnants reviewed by Miguel have been assigned Foreign or Water Only, with the earlier history retained. Original workbook references are preserved. Automated changes are identified in history as Automatic worldwide background.
+
+`classificationBackground` in the master and `classifications.background` in the compact export use formatVersion 1, land ranges and a checked land count. Their source metadata records the world-land repository commit and SHA-256 hashes of its base and overrides. The remaining grid is Water Only. The editor draws ranges and Dot Safari resolves them on demand; neither needs half a million individually stored classifications. The existing grid, eligible ranges and `sea` key are unchanged.
+
+Opening an older map without this optional background preserves its original defaults; importing that map does not silently install a new background. Save Map File and Undo/Redo preserve an explicit Unreviewed choice. Use a fresh working copy of the new master to inspect this update; restoring an older local draft may restore the old background too.
+
+During candidate testing, use **Save Map File** to retain your work. **Publish writes to main**, regardless of the code branch being tested. Commit the candidate's prepared master and compact files to its release branch through the repository editor; use Publish for normal map maintenance after the stable version is merged.
+
+Refreshing the pinned background is a data preparation operation: regenerate its merged ranges from the recorded world-land source and overrides, preserve individual decisions and history, increment the master revision, validate, and regenerate the compact export with core.js. Do not hand-edit thousands of background ranges. Preparation scripts stay outside this lightweight repository.
+
+The worldwide snapshot is derived from OpenStreetMap contributors, under ODbL 1.0. It describes land/no-land according to that model; access and euro-use eligibility remain separate curated decisions.
+
 ## Provenance & Credits
 
 *   **Curator / Lead:** Miguel Viterbo ([lmviterbo](https://eurobilltracker.com/profile/?user=10680) = [ShortOkapi](https://github.com/shortokapi))

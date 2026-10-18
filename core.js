@@ -38,10 +38,33 @@
     if(!inBounds(i,j)) throw Error('Dot index is outside the legacy grid.');
     return {i,j,world:first,enteredJ};
   }
+  function compileBackground(input) {
+    if(input===undefined)return null;
+    if(!input||input.formatVersion!==1||!Array.isArray(input.landRanges)||!Number.isSafeInteger(input.landCount)||input.landCount<0)throw Error('Invalid classification background.');
+    const source=input.source;
+    if(!source||source.repository!=='ShortOkapi/ebt-world-land-map'||!/^([a-f0-9]{40})$/.test(source.commit)||!/^([a-f0-9]{64})$/.test(source.baseSha256)||!/^([a-f0-9]{64})$/.test(source.overridesSha256))throw Error('Invalid classification background source.');
+    const rows=new Map();let count=0,previousRow=-1,previousEnd=-4;
+    for(const range of input.landRanges){
+      if(!Array.isArray(range)||range.length!==3||!range.every(Number.isSafeInteger))throw Error('Invalid classification background range.');
+      const [i,first,last]=range;
+      if(!inBounds(i,first)||!inBounds(i,last)||first>last||i<previousRow||i===previousRow&&first<=previousEnd)throw Error('Invalid or overlapping classification background range.');
+      if(!rows.has(i))rows.set(i,[]);
+      rows.get(i).push([first,last]);count+=last-first+1;previousRow=i;previousEnd=last;
+    }
+    if(count!==input.landCount)throw Error('Classification background count mismatch.');
+    return rows;
+  }
+  function backgroundClassification(rows,i,j) {
+    if(!rows||!inBounds(i,j))return 'unreviewed';
+    const intervals=rows.get(i)||[];let low=0,high=intervals.length-1;
+    while(low<=high){const mid=(low+high)>>1,[first,last]=intervals[mid];if(j<first)high=mid-1;else if(j>last)low=mid+1;else return 'foreign';}
+    return 'sea';
+  }
   function validate(data) {
     const fail=m=>{throw Error(m);};
     if(!data || data.format!=='ebt-target-editor' || data.formatVersion!==1) fail('This is not a supported editable target dataset (format version 1).');
     for(const [k,v] of Object.entries(GRID)) if(data.grid?.[k]!==v) fail(`Incompatible legacy grid: ${k}.`);
+    compileBackground(data.classificationBackground);
     if(data.model?.id!=='euro-use' || data.model?.worldwideLandIncluded!==false) fail('This editor version accepts the Euro-use model only.');
     if(typeof data.datasetId!=='string' || !data.datasetId || !Number.isSafeInteger(data.revision)||data.revision<0) fail('Invalid dataset identity or revision.');
     if(!Array.isArray(data.sources)||data.sources.length>1000) fail('Invalid source list.');
@@ -85,6 +108,7 @@
       if(last&&last[0]===c.i&&last[2]+1===c.j) last[2]=c.j;
       else list.push([c.i,c.j,c.j]);
     }
+    if(data.classificationBackground)classifications.background=clone(data.classificationBackground);
     return {format:'ebt-target-ranges',formatVersion:1,grid:clone(GRID),model:'euro-use',datasetId:data.datasetId,revision:data.revision,eligibleCount:eligible,ranges,classifications};
   }
   function sameEditor(a,b){
@@ -128,10 +152,28 @@
     constructor(data,actor={id:'local',name:'Name not recorded',authentication:'local'}){
       this.actor=clone(actor);
       this.doc=clone(validate(data)); this.cells=new Map(this.doc.cells.map(c=>[key(c.i,c.j),c]));
+      this.background=compileBackground(this.doc.classificationBackground);
       this.opened=new Map(this.doc.cells.map(c=>[key(c.i,c.j),c.classification]));
       this.openedHistoryLength=this.doc.history.length; this.undoStack=[]; this.redoStack=[];
     }
-    get(i,j){return this.cells.get(key(i,j))?.classification||'unreviewed';}
+    get(i,j){return this.cells.get(key(i,j))?.classification||backgroundClassification(this.background,i,j);}
+    rowRuns(){
+      const explicit=new Map(),rows=new Map();
+      for(const c of this.cells.values()){if(!explicit.has(c.i))explicit.set(c.i,[]);explicit.get(c.i).push(c);}
+      for(let i=GRID.minRow;i<=GRID.maxRow;i++){
+        const cuts=new Set([GRID.minColumn,GRID.maxColumn+1]);
+        for(const [first,last] of this.background?.get(i)||[]){cuts.add(first);cuts.add(last+1);}
+        for(const c of explicit.get(i)||[]){cuts.add(c.j);cuts.add(c.j+1);}
+        const edges=[...cuts].sort((a,b)=>a-b),runs=[];
+        for(let n=0;n<edges.length-1;n++){
+          const first=edges[n],last=edges[n+1]-1,classification=this.get(i,first),previous=runs[runs.length-1];
+          if(previous&&previous.classification===classification&&previous.last+1===first)previous.last=last;
+          else runs.push({i,first,last,classification});
+        }
+        rows.set(i,runs);
+      }
+      return rows;
+    }
     duplicate(i,j,to,comment,actor=this.actor){
       const last=[...this.doc.history].reverse().find(h=>h.dot[0]===i&&h.dot[1]===j);
       return repeatsEdit(last,this.get(i,j),to,comment,actor);
@@ -140,6 +182,7 @@
       if(!inBounds(i,j)||!Object.hasOwn(CLASSES,to)) throw Error('Invalid dot or classification.');
       if(typeof comment!=='string'||!comment.trim()) throw Error('Add a reason or comment before saving.');
       if(this.duplicate(i,j,to,comment)) throw Error('This classification and comment are already saved. Nothing new was added.');
+      if(!this.opened.has(key(i,j)))this.opened.set(key(i,j),this.get(i,j));
       const e=this.record(i,j,this.get(i,j),to,comment.trim(),'edit');
       this.undoStack.push(e); this.redoStack=[]; return e;
     }
@@ -159,6 +202,6 @@
       return [...touched].map(k=>{const c=this.cells.get(k);return {i:c.i,j:c.j,from:this.opened.get(k)||'unreviewed',to:c.classification,history:this.doc.history.slice(this.openedHistoryLength).filter(h=>key(...h.dot)===k)};}).sort(compare);
     }
   }
-  root.TargetCore={GRID,CLASSES,key,clone,compare,canonicalLongitude,atLatLng,bounds,parseDot,validate,compact,visibleHistory,undoneEditIds,undoneHistoryIds,Editor};
+  root.TargetCore={GRID,CLASSES,key,clone,compare,compileBackground,backgroundClassification,canonicalLongitude,atLatLng,bounds,parseDot,validate,compact,visibleHistory,undoneEditIds,undoneHistoryIds,Editor};
   if(typeof module!=='undefined'&&module.exports)module.exports=root.TargetCore;
 })(typeof globalThis!=='undefined'?globalThis:this);
