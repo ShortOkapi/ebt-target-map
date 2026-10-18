@@ -5,7 +5,7 @@
   const CLASSES = Object.freeze({
     eligible:{label:'Conquerable Euro land',color:'#F1A983'},
     excluded:{label:'Unconquerable Euro land',color:'#737373'},
-    sea:{label:'Sea',color:'#AAD3DF'},
+    sea:{label:'Water Only',color:'#AAD3DF'},
     foreign:{label:'Foreign land',color:'#FF0000'},
     unreviewed:{label:'Unreviewed',color:'#FFFFFF'}
   });

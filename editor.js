@@ -1,7 +1,7 @@
 /* Browser editor. Requires Leaflet 1.9.4 and the shared core.js. */
 (async function(){
 'use strict';
-const APP_VERSION='v1.2.1';
+const APP_VERSION='1.2.2-rc1';
 const C=TargetCore, G=C.GRID, $=id=>document.getElementById(id);
 document.title=`EBT Dot Safari · Target map editor · v${APP_VERSION}`;
 $('draft-status').textContent=`Standalone editor · v${APP_VERSION}`;
@@ -235,13 +235,28 @@ function buildReport(data){
   const count=n=>n.toLocaleString('en-GB');
   
   const regionNames={'workbook-11':'Main European cluster','workbook-07':'Finland & Baltic','workbook-08':'Ireland','workbook-06':'Azores, Madeira & Canaries','workbook-03':'Cyprus','workbook-05':'French Caribbean & Guiana','workbook-10':'French Indian Ocean areas','workbook-02':'St-Pierre & Miquelon','workbook-09':'French Antarctic Ocean areas','workbook-04':'Terre d’Adélie','workbook-01':'Clipperton'};
-  const stats=Object.fromEntries(data.sources.map(s=>[s.id,{name:regionNames[s.id]||s.filename,eligible:0,excluded:0}]));
-  for(const c of data.cells)if((c.classification==='eligible'||c.classification==='excluded')&&c.provenance?.[0]?.sourceId)stats[c.provenance[0].sourceId][c.classification]++;
+  const stats=new Map(data.sources.map(s=>[s.id,{name:Object.hasOwn(regionNames,s.id)?regionNames[s.id]:s.filename,eligible:0,excluded:0}]));
+  const unassigned={name:'Other / unassigned area',eligible:0,excluded:0};
+  for(const c of data.cells){
+    if(c.classification!=='eligible'&&c.classification!=='excluded')continue;
+    // Original source references remain authoritative; new manual cells may have none.
+    let area=(c.provenance||[]).map(p=>stats.get(p.sourceId)).find(Boolean);
+    if(!area){
+      const matches=data.sources.filter(s=>{
+        const b=s.bounds;
+        return c.i>=b.southRow&&c.i<=b.northRow&&c.j>=b.westColumn&&c.j<=b.eastColumn;
+      });
+      area=matches.length===1?stats.get(matches[0].id):unassigned;
+    }
+    area[c.classification]++;
+  }
+  const order=[...Object.keys(regionNames).filter(id=>stats.has(id)),...stats.keys()].filter((id,index,all)=>all.indexOf(id)===index);
+  const reportAreas=order.map(id=>stats.get(id));
+  if(unassigned.eligible||unassigned.excluded)reportAreas.push(unassigned);
   let tEligible=0,tExcluded=0,statsHTML='';
-  for(const id of Object.keys(regionNames)){
-    if(!stats[id])continue;
-    tEligible+=stats[id].eligible;tExcluded+=stats[id].excluded;
-    statsHTML+=`<tr><td>${escapeHTML(stats[id].name)}</td><td>${count(stats[id].eligible)}</td><td>${count(stats[id].excluded)}</td><td>${count(stats[id].eligible+stats[id].excluded)}</td></tr>`;
+  for(const area of reportAreas){
+    tEligible+=area.eligible;tExcluded+=area.excluded;
+    statsHTML+=`<tr><td>${escapeHTML(area.name)}</td><td>${count(area.eligible)}</td><td>${count(area.excluded)}</td><td>${count(area.eligible+area.excluded)}</td></tr>`;
   }
   statsHTML+=`<tr style="font-weight: 650; background: #edf3f6;"><td>Total</td><td>${count(tEligible)}</td><td>${count(tExcluded)}</td><td>${count(tEligible+tExcluded)}</td></tr>`;
 
@@ -284,7 +299,7 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
---><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>EBT Dot Safari — saved changes, revision ${data.revision}</title><style>${REPORT_CSS}</style></head><body><main><div class="eyebrow">EBT DOT SAFARI</div><h1>Saved map changes</h1><p class="meta">${escapeHTML(startingMapLabel())}<br>Current map revision: ${data.revision}<br>History times are shown in UTC.</p><p class="callout"><strong>${count(changed)} changed ${changed===1?'dot':'dots'} · ${count(history.length)} saved ${history.length===1?'entry':'entries'} · ${count(editors)} ${editors===1?'editor':'editors'} · ${count(eligible)} eligible dots</strong></p><nav id="contents" aria-label="Report contents" tabindex="-1"><a href="#area-summary">Area summary</a><a href="#current">Current decisions</a><a href="#summary">History log</a><a href="#comments">Full comments</a></nav><button class="print" onclick="window.print()">Print / Save as PDF</button><div class="section-heading"><h2 id="area-summary">Area summary</h2><a class="back-to-contents" href="#contents"><span aria-hidden="true">↑</span>Back to contents</a></div><p class="meta">Total Conquerable and Unconquerable Euro land dots per area.</p><div class="scroll"><table aria-label="Area summary"><thead><tr><th>Area</th><th>Conquerable</th><th>Unconquerable</th><th>Total Euro land</th></tr></thead><tbody>${statsHTML}</tbody></table></div><div class="section-heading"><h2 id="current">Current decisions</h2><a class="back-to-contents" href="#contents"><span aria-hidden="true">↑</span>Back to contents</a></div><p class="meta">Click any column heading to sort these decisions.</p>${!decisions.length?'<p>No manual decisions have been saved in this map yet.</p>':''}<div class="scroll"><table id="current-table" class="sortable" aria-label="Current decisions"><thead><tr>${heading('Dot','dot')}${heading('Original classification','text')}${heading('Saved classification','text')}</tr></thead><tbody>${decisionsHTML}</tbody></table></div><div class="section-heading"><h2 id="summary">Summary</h2><a class="back-to-contents" href="#contents"><span aria-hidden="true">↑</span>Back to contents</a></div><p>Click a column heading to sort; click it again to reverse the order. Click a dot to read its full comment.</p><div class="scroll"><table id="summary-table" class="sortable" aria-label="Summary"><thead><tr>${heading('Dot','dot')}${heading('When','date')}${heading('Editor','text')}${heading('What was saved','text')}</tr></thead><tbody>${summaryHTML}</tbody></table></div><div class="section-heading"><h2 id="comments">Full comments</h2><a class="back-to-contents" href="#contents"><span aria-hidden="true">↑</span>Back to contents</a></div><p class="meta">Saved comments, with repeated saves shown only once. Edits and Redo steps labelled Undone have been reversed; Undo and Redo entries keep the full sequence. Current decisions above show the saved classifications.</p>${commentsHTML}<footer class="meta">Change report for Miguel / lmviterbo. Use Save Map File in the editor to keep or move the complete working map. This report does not update the public Dot Safari app.</footer><p id="sort-status" class="sr-only" role="status" aria-live="polite"></p></main><script>${REPORT_SCRIPT}</scr`+'ipt></body></html>';
+--><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>EBT Dot Safari — saved changes, revision ${data.revision}</title><style>${REPORT_CSS}</style></head><body><main><div class="eyebrow">EBT DOT SAFARI</div><h1>Saved map changes</h1><p class="meta">${escapeHTML(startingMapLabel())}<br>Current map revision: ${data.revision}<br>History times are shown in UTC.</p><p class="callout"><strong>${count(changed)} changed ${changed===1?'dot':'dots'} · ${count(history.length)} saved ${history.length===1?'entry':'entries'} · ${count(editors)} ${editors===1?'editor':'editors'} · ${count(eligible)} eligible dots</strong></p><nav id="contents" aria-label="Report contents" tabindex="-1"><a href="#area-summary">Area summary</a><a href="#current">Current decisions</a><a href="#summary">History log</a><a href="#comments">Full comments</a></nav><button class="print" onclick="window.print()">Print / Save as PDF</button><div class="section-heading"><h2 id="area-summary">Area summary</h2><a class="back-to-contents" href="#contents"><span aria-hidden="true">↑</span>Back to contents</a></div><p class="meta">Total Conquerable and Unconquerable Euro land dots per area. Every Euro-use land dot is counted once. Dots without a unique area appear under Other / unassigned area.</p><div class="scroll"><table aria-label="Area summary"><thead><tr><th>Area</th><th>Conquerable</th><th>Unconquerable</th><th>Total Euro land</th></tr></thead><tbody>${statsHTML}</tbody></table></div><div class="section-heading"><h2 id="current">Current decisions</h2><a class="back-to-contents" href="#contents"><span aria-hidden="true">↑</span>Back to contents</a></div><p class="meta">Click any column heading to sort these decisions.</p>${!decisions.length?'<p>No manual decisions have been saved in this map yet.</p>':''}<div class="scroll"><table id="current-table" class="sortable" aria-label="Current decisions"><thead><tr>${heading('Dot','dot')}${heading('Original classification','text')}${heading('Saved classification','text')}</tr></thead><tbody>${decisionsHTML}</tbody></table></div><div class="section-heading"><h2 id="summary">Summary</h2><a class="back-to-contents" href="#contents"><span aria-hidden="true">↑</span>Back to contents</a></div><p>Click a column heading to sort; click it again to reverse the order. Click a dot to read its full comment.</p><div class="scroll"><table id="summary-table" class="sortable" aria-label="Summary"><thead><tr>${heading('Dot','dot')}${heading('When','date')}${heading('Editor','text')}${heading('What was saved','text')}</tr></thead><tbody>${summaryHTML}</tbody></table></div><div class="section-heading"><h2 id="comments">Full comments</h2><a class="back-to-contents" href="#contents"><span aria-hidden="true">↑</span>Back to contents</a></div><p class="meta">Saved comments, with repeated saves shown only once. Edits and Redo steps labelled Undone have been reversed; Undo and Redo entries keep the full sequence. Current decisions above show the saved classifications.</p>${commentsHTML}<footer class="meta">Change report for Miguel / lmviterbo. Use Save Map File in the editor to keep or move the complete working map. This report does not update the public Dot Safari app.</footer><p id="sort-status" class="sr-only" role="status" aria-live="polite"></p></main><script>${REPORT_SCRIPT}</scr`+'ipt></body></html>';
 }
 
 function currentActor(){return {id:'local',name:$('local-author').value.trim(),authentication:'local'};}
@@ -472,7 +487,7 @@ for(const [value,meta] of Object.entries(C.CLASSES)){
   $('classification').append(new Option(`${meta.label} — ${meta.color}`,value));
   const label=add($('legend-items'),'span'),sw=add(label,'span',undefined,'swatch');
   sw.style.background=meta.color;
-  add(label,'span',({eligible:'Conquerable',excluded:'Unconquerable',foreign:'Foreign',sea:'Sea',unreviewed:'Unreviewed'})[value]);
+  add(label,'span',({eligible:'Conquerable',excluded:'Unconquerable',foreign:'Foreign',sea:'Water Only',unreviewed:'Unreviewed'})[value]);
   if(value==='sea')sw.classList.add('sea-swatch');
   if(value==='excluded')sw.classList.add('excluded-swatch');
   if(value==='unreviewed')sw.classList.add('unreviewed-swatch');

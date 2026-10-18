@@ -16,7 +16,7 @@ The tool is built as a static, single-page web application integrated with a Nod
 
 ## The Editing Workflow
 
-The map editor allows curators to visually assign eligibility statuses (Conquerable, Unconquerable, Sea, Foreign, Unreviewed) to specific geographic dots.
+The map editor allows curators to visually assign eligibility statuses (Conquerable, Unconquerable, Water Only, Foreign, Unreviewed) to specific geographic dots. Water Only means no land anywhere in that dot, including sea or inland water; a small island still makes it a land dot. The existing `sea` JSON key, saved maps and history remain compatible. Old written comments are retained as originally entered. The label change does not classify or detect inland lakes automatically. Unreviewed remains available for later investigations.
 
 1.  **Local Editing:** Edits are made in the browser and automatically saved to `localStorage` as a working draft. Unfinished forms and comments are retained between sessions.
 2.  **Reviewing:** Editors can generate a visual HTML Change Report summarizing their session's actions, which can be saved or shared.
