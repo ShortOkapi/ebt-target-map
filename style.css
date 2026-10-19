@@ -213,6 +213,13 @@ a {
 .inspector>section {
   margin-bottom:22px
 }
+.dot-name {
+  font-size:16px;
+  font-weight:650;
+  line-height:1.35;
+  margin-bottom:3px;
+  overflow-wrap:anywhere
+}
 .dot-title {
   display:flex;
   justify-content:space-between;
@@ -680,9 +687,6 @@ body {
 /* Static presentation moved out of index.html and editor.js. */
 .inspector .eyebrow {
   color: #657c8b;
-}
-#copy-info {
-  margin-top: 8px;
 }
 #review-content {
   overflow-x: auto;

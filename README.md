@@ -25,7 +25,7 @@ The map editor allows curators to visually assign eligibility statuses (Conquera
 
 ## Worldwide classification background
 
-Current test candidate: **1.3.0-rc1**.
+Current test candidate: **1.3.0-rc2**.
 
 The current master map contains a compact snapshot of the separate [worldwide land model](https://github.com/ShortOkapi/ebt-world-land-map), including its manual overrides. Dots without an individual classification resolve to Foreign where that model contains land and Water Only elsewhere. An explicit classification always wins, including a deliberate Unreviewed decision. This background does not add eligible Euro-use targets or remove every inland lake.
 
@@ -40,6 +40,18 @@ During candidate testing, use **Save Map File** to retain your work. **Publish w
 Refreshing the pinned background is a data preparation operation: regenerate its merged ranges from the recorded world-land source and overrides, preserve individual decisions and history, increment the master revision, validate, and regenerate the compact export with core.js. Do not hand-edit thousands of background ranges. Preparation scripts stay outside this lightweight repository.
 
 The worldwide snapshot is derived from OpenStreetMap contributors, under ODbL 1.0. It describes land/no-land according to that model; access and euro-use eligibility remain separate curated decisions.
+
+## Dot names in the side panel
+
+The side panel identifies the dot first, followed by its Euro-use classification. When a name is available it shows, for example, **Ourém Dot**, with **[462, 405]** on the next line. An unnamed dot is simply **Dot** followed by its ID.
+
+The editor reads the public Dot Safari `dot-name-overrides.json` and, on demand, the relevant prepared-place block described by `data/destinations/manifest.json`. There is no second list to maintain here. Preferred names and deliberate name exclusions take precedence over automatic names. The Euro-use name is preferred; a worldwide name is used if no Euro-use name is available. Reload the editor to check updated name data.
+
+Name lookups are optional and have a timeout. Failed lookups leave the heading as Dot and its ID; they never block editing. Only the heading is updated when a name arrives, preserving an unfinished comment or classification choice. Names are labels for orientation, separate from the eligibility decisions. They are not copied into saved maps, reports or edit history. This is name retrieval, not a name editor.
+
+The manifest must match the existing grid; prepared blocks are checked against their recorded size and SHA-256 hash. A small in-memory cache avoids repeated downloads during the same visit. Source data remain in the Dot Safari repository: OpenStreetMap contributors (ODbL 1.0) and additional GeoNames data (CC BY 4.0), with preferred names maintained by Miguel. No Notes file or live GPS position is read or sent by this feature.
+
+The world map repeats visually when panned far enough east or west. These copies use the same stored dot IDs and decisions. This display behaviour is explained in Help rather than repeated in the editing panel.
 
 ## Provenance & Credits
 
