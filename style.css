@@ -724,3 +724,7 @@ body {
   margin: 16px 0;
   background: white;
 }
+.public-map-notice {display:flex;align-items:center;justify-content:space-between;gap:10px 18px;padding:12px 22px;background:#fff4d6;color:#654713;border-bottom:1px solid #dfc579;font-size:13px;line-height:1.45}
+.public-map-notice[hidden] {display:none}
+.public-map-notice button {flex-shrink:0}
+@media(max-width:600px){.public-map-notice{padding:12px;align-items:flex-start;flex-direction:column}}

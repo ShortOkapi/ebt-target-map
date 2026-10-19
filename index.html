@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="referrer" content="strict-origin-when-cross-origin">
-<title>EBT Dot Safari · Target map editor</title>
+<title>EBT DotPick · Target map editor</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAsTAAALEwEAmpwYAAACJ0lEQVRYhe1XO0sDQRA+0N9wh62N2t9ZqZcoRLy1jaIXc8HCRxNj8IFaCl4ajYUpQtRCBbWUkEr/gDaKj98hlqY5+TZuvMdeTpDLISTwNfPNzszOzkzmBAE/Ve0Wlcm8KJM3SSF1SSFWSKiLsvYqyiQHn9R3w7lWC9EpF6JMqjQI3Lzdzm1B5ASkJKoAJIU8C+43XyocW+XbR6ty99REqfZgxYw1yvfGpi3z8tbBA5CBg048s07P2HnYXDQrzgwo2icCcAjdzhmy+2eUH81scHkAHHSyB+dcHrbd/gS3wM/4SvGC8mPzm7464KADXT+dTgBS0BMc1e65qVsqnFB+WF/1TS846CwXTrk8bAcGEDPWaMHhHRngvC+RonzP4KQ1u1108MDM1gHloNOfSNEzdh421e9OahmA1GYIbgF6Ge2EimYYSuWbt6NZIlOWoacdULVkk4cuzthtwCabEy0DMDlDBkDawcPR+9Wu9XHtBGQsCH2nyLUB239uQ0NPe5wzgAt9DhidAPSQn8D0KUL0eVARjky0LsK93xRhL6cNMeHsbYgggtoQZ7xtOPUPBlE8s+4ZxZjtGK/sdvrOoWcUI+0sSwPjc/SMexTHfzOKS65Npu1/RpXOQnIX8UpWjmAprdsFi6Z3LUfxqAFrOYYM63NUu3uzgs2FPc5aLkb9YSLKJBddAFq28XEqk2oEzm+EZLLr5wtZJjlR0V7wLmE5hW34oDf/dv4F/NSaZLFxf24AAAAASUVORK5CYII=">
@@ -13,7 +13,7 @@
 </head>
 <body>
 <header class="top">
- <div class="brand"><div class="mark" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div><div class="eyebrow">EBT Dot Safari</div><h1>Target map editor</h1><div id="starting-map" class="starting-map" aria-live="polite"></div></div></div>
+ <div class="brand"><div class="mark" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div><div class="eyebrow">EBT DotPick</div><h1>Target map editor</h1><div id="starting-map" class="starting-map" aria-live="polite"></div></div></div>
  <div class="top-actions"><button id="open-file" class="ghost">Open Map</button><button id="export-file" class="ghost">Save Map</button><div class="header-divider" aria-hidden="true"></div><button id="publish-map" class="admin" title="Publish Map &amp; Save Copy">⚙️ Publish</button><div class="header-divider" aria-hidden="true"></div><button id="help-button" class="ghost" aria-label="How to use this editor">Help</button><button id="review" class="primary">Review Changes <span id="changed-count">(0)</span></button></div>
 </header>
 <div id="editor-bar">
@@ -21,6 +21,7 @@
  <span id="edit-mode-note">Your name is recorded with each saved change.</span>
  <span id="editor-name-error" class="small error" role="alert" hidden></span>
 </div>
+<div id="public-map-notice" class="public-map-notice" role="status" hidden><span id="public-map-message"></span><button id="use-public-map" type="button">Use public map</button></div>
 <div id="recovery" hidden><span id="recovery-message">A saved browser draft could not be read. Open a saved map file, or discard this unreadable draft to start again.</span><button id="discard-draft">Discard unreadable draft</button></div>
 <div class="toolbar">
  <form id="search-form"><label for="dot-search">Find a dot</label><div class="search-row"><input id="dot-search" placeholder="[458, 403]" aria-label="Dot ID, latitude index then longitude index" autocomplete="off"><button type="submit">Go</button></div></form>
@@ -68,8 +69,8 @@
   <li>Click <strong>Review Changes</strong>, then <strong>Share Change Report</strong> if it is available. Choose an app, select Miguel / lmviterbo as the recipient, and send the attachment. You can always use <strong>Save Change Report</strong> to download the report and attach it yourself.</li>
  </ol>
  <p>The sharing menu and available apps depend on your browser and device. The Share button appears only when this HTML report can be shared. Cancelling the menu returns you to the editor; if sharing fails, use <strong>Save Change Report</strong>.</p>
- <p>Your edits affect only your own working copy. <strong>Save change</strong> updates that copy, and <strong>Save Map File</strong> downloads it. Neither action changes the shared starting map or the live Dot Safari app.</p>
- <p id="storage-explanation">Your work, including an unfinished comment, is saved automatically in this browser. Refreshing or reopening the editor in the same browser normally restores it. If automatic saving is unavailable, the editor will tell you.</p>
+ <p>Your edits affect only your own working copy. <strong>Save change</strong> updates that copy, and <strong>Save Map File</strong> downloads it. Neither action changes the shared starting map or the live DotPick app.</p>
+ <p id="storage-explanation">Your confirmed edits and unfinished forms are saved in this browser. An untouched copy follows the public map on your next visit, retaining your view settings. Local edits, unfinished forms and deliberately opened map files are preserved. When a public starting map is available for a retained copy, a notice lets you switch explicitly. If automatic saving is unavailable, the editor will tell you.</p>
  <p>To continue on another computer or in another browser, save your current change, then use <strong>Save Map File</strong>. Open the editor there and choose <strong>Open Map File</strong> to load the copy you saved. You can also save a map file whenever you want a separate copy of your work.</p>
  <details class="details">
   <summary><strong>For the map manager</strong></summary>
@@ -77,7 +78,7 @@
   <p><strong>Save Map File</strong> downloads a new copy; it does not overwrite the file you opened. That copy keeps every dot, comment, editor name, history entry and source reference. Use it before clearing browser data or moving or replacing a downloaded editor. Keep the downloaded editor in the same place and use the same browser to retain its draft.</p>
   <p>Each collaborator has their own browser draft. It is not shared automatically. Private browsing clears its draft when the private session ends. If browser saving fails, save your current change and use <strong>Save Map File</strong> before closing.</p>
   <h3>Starting map and history</h3>
-  <p>The <strong>Starting map</strong> reference identifies the map you began with. It stays fixed as you edit and when your draft is restored, and also appears in the change report. Opening a map file starts a new reference. An older draft may not have recorded its starting reference; its saved work is still kept.</p>
+  <p>The <strong>Starting map</strong> reference identifies the map you began editing or opened from a file. An untouched public copy adopts the latest available public map when you reopen the editor. It stays fixed as you edit and when your draft is restored, and also appears in the change report. Opening a map file starts a new reference. An older draft may not have recorded its starting reference; its saved work is still kept.</p>
   <p>The history and report include earlier visits, with repeated saves of the same classification and comment by the same editor shown only once. The original records remain in the map file. You can save a new comment without changing the classification. An identical repeat of your latest classification and comment is not saved twice. <strong>Undo</strong> and <strong>Redo</strong> apply during the current visit and remain visible in the history. A reversed edit is labelled <strong>Undone</strong>; using Redo removes that label from the original edit. A Redo that is later reversed is also labelled <strong>Undone</strong>; that Redo record keeps its label if another Redo is recorded. The latest saved comment shows the most recent edit that has not been undone. Save the map file and report again after a correction to update your downloaded copies.</p>
   <h3>Exported filenames and dates</h3>
   <p>Exported filenames include the map revision, editor name and export time. Filename times use <strong>UTC (UTC+00:00)</strong>, in <strong>YYYYMMDD-HHmm</strong> format, without seconds or a timezone suffix. Unicode letters, spaces and emojis are kept. Characters that cannot be used in filenames are replaced with underscores; exceptionally long names are shortened in filenames only. Names inside the map and report are kept unchanged.</p>
@@ -85,11 +86,11 @@
   <h3>Map display</h3>
   <p>Orange dots can be Euro-use targets. Unconquerable Euro land is dark grey with crossed hatching; Water Only has blue diagonal stripes; Foreign land is red. Water Only means no land anywhere in the dot, whether the water is sea, a lake or another inland water body. This wording does not automatically identify inland water. Unreviewed dots have no classification colour or pattern. All classifications except Conquerable are excluded from Euro-use targets. The current map also has an automatic worldwide background: unrecorded land dots are Foreign and unrecorded no-land dots are Water Only. An explicit decision, including Unreviewed, takes precedence. The background follows the worldwide land model and does not detect every inland lake. Older map files without a background retain their original Unreviewed defaults.</p>
   <p>The opacity slider fades the classification colours. Crossed lines keep a minimum visibility while the overlay is on, so Unconquerable dots remain recognisable over the map. At 0%, all classification colours and patterns are hidden. Map imagery needs internet access; the grid, editing and exports still work without it.</p>
-  <p>Dot names, when available, come from Dot Safari's preferred names and prepared place data. The Euro-use name is shown when available; otherwise the worldwide name is used. Names are optional labels for orientation. If they cannot be loaded, the dot ID and all editing functions remain available.</p>
+  <p>Dot names, when available, come from DotPick's preferred names and prepared place data. The Euro-use name is shown when available; otherwise the worldwide name is used. Names are optional labels for orientation. If they cannot be loaded, the dot ID and all editing functions remain available.</p>
   <p class="small muted">Dot-name data: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a> · ODbL. Additional data: <a href="https://www.geonames.org/" target="_blank" rel="noopener noreferrer">GeoNames</a> · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>.</p>
   <p>Panning far enough east or west shows the world map again. These copies show the same places, so changing a dot updates its display in every copy.</p>
-  <h3>Preparing data for Dot Safari</h3>
-  <p>Editing or saving files here does not update the public Dot Safari app. The smaller eligibility file below is for preparing a future app update. It omits comments and history; use <strong>Save Map File</strong> to keep the complete working map.</p>
+  <h3>Preparing data for DotPick</h3>
+  <p>Editing or saving files here does not update the public DotPick app. The smaller eligibility file below is for preparing a future app update. It omits comments and history; use <strong>Save Map File</strong> to keep the complete working map.</p>
   <button id="export-ranges">Save eligibility data</button>
   <div id="dataset-info" class="small muted"></div>
  </details>
