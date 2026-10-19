@@ -1,14 +1,14 @@
 /* Browser editor. Requires Leaflet 1.9.4 and the shared core.js. */
 (async function(){
 'use strict';
-const APP_VERSION='1.3.0';
+const APP_VERSION='1.3.1';
 const C=TargetCore, G=C.GRID, $=id=>document.getElementById(id);
-document.title=`EBT Dot Safari · Target map editor · v${APP_VERSION}`;
+document.title=`EBT DotPick · Target map editor · v${APP_VERSION}`;
 $('draft-status').textContent=`Standalone editor · v${APP_VERSION}`;
 $('help-app-version').textContent=`v${APP_VERSION}`;
 let initial = null;
 try {
-  const response = await fetch('euro-use-master-map.json');
+  const response = await fetch('euro-use-master-map.json',{cache:'no-cache'});
   if (!response.ok) throw new Error('Could not load euro-use-master-map.json');
   initial = await response.json();
 } catch (error) {
@@ -22,6 +22,53 @@ let editor=new C.Editor(initial), selected=null, rows=new Map();
 let exportedRevision=initial.revision, draftAvailable=false, recoveryError=false;
 let storedData=editor.export();
 let startingMap=captureStartingMap(initial);
+let workingSource='public',workingBaseline=captureStartingMap(initial),localMapEdits=false;
+let restoredWorkingCopy=false,adoptedPublicMap=false;
+
+function pendingDraft(data,draft){
+  const p=draft?.pendingForm;
+  if(!p||!Array.isArray(p.dot)||p.dot.length!==2||!Object.hasOwn(C.CLASSES,p.classification)||typeof p.reason!=='string')return false;
+  const [i,j]=p.dot;
+  if(!Number.isSafeInteger(i)||!Number.isSafeInteger(j)||i<G.minRow||i>G.maxRow||j<G.minColumn||j>G.maxColumn)return false;
+  return p.reason.trim()!==''||p.classification!==data.get(i,j);
+}
+function draftDecision(publicData,draft){
+  const saved=new C.Editor(draft.data),reference=restoreStartingMap(draft.startingMap,saved.doc);
+  const metadata=draft.workingCopy;
+  let source='public',baseline=reference,edits=true;
+  if(metadata?.formatVersion===1&&['public','file'].includes(metadata.source)&&typeof metadata.localEdits==='boolean'){
+    baseline=restoreStartingMap(metadata.baseline,saved.doc);
+    if(baseline){source=metadata.source;edits=metadata.localEdits||saved.doc.revision!==baseline.revision;}
+  }else if(!metadata&&reference){
+    // Older versions recorded no file-origin flag. An equal starting/current
+    // revision identifies a copy with no confirmed edits since it was opened.
+    edits=saved.doc.revision!==reference.revision;
+  }
+  const pending=pendingDraft(saved,draft);
+  const usePublic=source==='public'&&!edits&&!pending&&baseline&&publicData.datasetId===saved.doc.datasetId&&publicData.revision>=saved.doc.revision;
+  return {saved,source,baseline,edits,pending,usePublic};
+}
+function refreshPublicMapNotice(){
+  const notice=$('public-map-notice');
+  if(!notice)return;
+  const different=editor.doc.datasetId!==initial.datasetId;
+  const hasNewPublic=different||!workingBaseline||workingBaseline.datasetId!==initial.datasetId||initial.revision>workingBaseline.revision;
+  const show=workingSource==='file'||hasNewPublic;
+  notice.hidden=!show||recoveryError;
+  if(!show)return;
+  const lead=workingSource==='file'?'You are working from an opened map file.':`Your saved working map (revision ${editor.doc.revision}) has been kept.`;
+  $('public-map-message').textContent=`${lead} The public starting map is revision ${initial.revision}. Save any work you want to keep before switching.`;
+  $('use-public-map').textContent=`Use public map r${initial.revision}`;
+}
+function resetToPublicMap(){
+  if((localMapEdits||workingSource==='file'||hasFormDraft())&&!confirm('Replace your working copy and unfinished form with the current public map? Save Map first if you want to keep your work.'))return;
+  editor=new C.Editor(initial);storedData=editor.export();exportedRevision=editor.doc.revision;
+  startingMap=captureStartingMap(initial);workingBaseline=captureStartingMap(initial);
+  workingSource='public';localMapEdits=false;recoveryError=false;$('recovery').hidden=true;
+  showStartingMap();populateSources();renderSelection();
+  if(persist())status(`Using public map revision ${editor.doc.revision}.`);
+  refresh();refreshPublicMapNotice();
+}
 
 function referenceDate(value){
   if(typeof value!=='string')return null;
@@ -61,7 +108,7 @@ const regionDisplayOrder = [
 ];
 const map=L.map('map',{center:[49,10],zoom:5,minZoom:2,maxZoom:18,zoomControl:true,worldCopyJump:false});
 const osm=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,referrerPolicy:'strict-origin-when-cross-origin',attribution:'© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>'});
-const esri=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Imagery © Esri, Maxar, Earthstar Geographics and the GIS User Community'});
+const esri=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Imagery © <a href="https://www.esri.com/en-us/legal/terms/data-attributions" target="_blank" rel="noopener">Esri</a>, Maxar, Earthstar Geographics and the GIS User Community'});
 let background=osm.addTo(map);
 // The selected background always stays selected, even if tiles cannot load.
 for(const sourceLayer of [osm,esri]){
@@ -159,10 +206,10 @@ function sourceRefs(i,j){
 }
 function hasFormDraft(){return !!selected&&($('reason').value.trim()!==''||$('classification').value!==editor.get(selected.i,selected.j));}
 function leaveForm(){return !hasFormDraft()||confirm(`Discard the unsaved form for dot [${selected.i}, ${selected.j}]?`);}
-// Optional display labels read from Dot Safari; never written to map data or history.
+// Optional display labels read from DotPick; never written to map data or history.
 const dotNameReader=(()=>{
-  const root=new URL('https://shortokapi.github.io/ebt-dot-safari/');
-  const dataRoot=new URL('data/destinations/',root);
+  let root=new URL('https://shortokapi.github.io/ebt-dotpick/');
+  let dataRoot=new URL('data/destinations/',root);
   const names=new Map(),blocks=new Map();
   let preferredPromise=null,manifestPromise=null;
   const validName=value=>typeof value==='string'&&!!value.trim()&&value.length<=1000;
@@ -180,7 +227,14 @@ const dotNameReader=(()=>{
   }
   function preferred(){
     if(!preferredPromise)preferredPromise=(async()=>{
-      const data=JSON.parse(await fetchText(new URL('dot-name-overrides.json',root),4*1024*1024));
+      let body;
+      try{body=await fetchText(new URL('dot-name-overrides.json',root),4*1024*1024);}
+      catch(error){
+        // Compatibility while the renamed site is being deployed.
+        root=new URL('https://shortokapi.github.io/ebt-dot-safari/');dataRoot=new URL('data/destinations/',root);
+        body=await fetchText(new URL('dot-name-overrides.json',root),4*1024*1024);
+      }
+      const data=JSON.parse(body);
       if(data?.format!=='ebt-dot-name-overrides'||data.formatVersion!==1||!Array.isArray(data.include)||!Array.isArray(data.exclude)||data.include.length>50000||data.exclude.length>50000)throw Error('Invalid preferred names');
       const entries=new Map(),excluded=new Set(),fields=['name','nameEuroUse','nameWorldwide'];
       for(const entry of data.include){
@@ -409,7 +463,7 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
---><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>EBT Dot Safari — saved changes, revision ${data.revision}</title><style>${REPORT_CSS}</style></head><body><main><div class="eyebrow">EBT DOT SAFARI</div><h1>Saved map changes</h1><p class="meta">${escapeHTML(startingMapLabel())}<br>Current map revision: ${data.revision}<br>History times are shown in UTC.</p><p class="callout"><strong>${count(changed)} changed ${changed===1?'dot':'dots'} · ${count(history.length)} saved ${history.length===1?'entry':'entries'} · ${count(editors)} ${editors===1?'editor':'editors'} · ${count(eligible)} eligible dots</strong></p><nav id="contents" aria-label="Report contents" tabindex="-1"><a href="#area-summary">Area summary</a><a href="#current">Current decisions</a><a href="#summary">History log</a><a href="#comments">Full comments</a></nav><button class="print" onclick="window.print()">Print / Save as PDF</button><div class="section-heading"><h2 id="area-summary">Area summary</h2><a class="back-to-contents" href="#contents"><span aria-hidden="true">↑</span>Back to contents</a></div><p class="meta">Total Conquerable and Unconquerable Euro land dots per area. Every Euro-use land dot is counted once. Dots without a unique area appear under Other / unassigned area.</p><div class="scroll"><table aria-label="Area summary"><thead><tr><th>Area</th><th>Conquerable</th><th>Unconquerable</th><th>Total Euro land</th></tr></thead><tbody>${statsHTML}</tbody></table></div><div class="section-heading"><h2 id="current">Current decisions</h2><a class="back-to-contents" href="#contents"><span aria-hidden="true">↑</span>Back to contents</a></div><p class="meta">Click any column heading to sort these decisions.</p>${!decisions.length?'<p>No manual decisions have been saved in this map yet.</p>':''}<div class="scroll"><table id="current-table" class="sortable" aria-label="Current decisions"><thead><tr>${heading('Dot','dot')}${heading('Original classification','text')}${heading('Saved classification','text')}</tr></thead><tbody>${decisionsHTML}</tbody></table></div><div class="section-heading"><h2 id="summary">Summary</h2><a class="back-to-contents" href="#contents"><span aria-hidden="true">↑</span>Back to contents</a></div><p>Click a column heading to sort; click it again to reverse the order. Click a dot to read its full comment.</p><div class="scroll"><table id="summary-table" class="sortable" aria-label="Summary"><thead><tr>${heading('Dot','dot')}${heading('When','date')}${heading('Editor','text')}${heading('What was saved','text')}</tr></thead><tbody>${summaryHTML}</tbody></table></div><div class="section-heading"><h2 id="comments">Full comments</h2><a class="back-to-contents" href="#contents"><span aria-hidden="true">↑</span>Back to contents</a></div><p class="meta">Saved comments, with repeated saves shown only once. Edits and Redo steps labelled Undone have been reversed; Undo and Redo entries keep the full sequence. Current decisions above show the saved classifications.</p>${commentsHTML}<footer class="meta">Change report for Miguel / lmviterbo. Use Save Map File in the editor to keep or move the complete working map. This report does not update the public Dot Safari app.</footer><p id="sort-status" class="sr-only" role="status" aria-live="polite"></p></main><script>${REPORT_SCRIPT}</scr`+'ipt></body></html>';
+--><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>EBT DotPick — saved changes, revision ${data.revision}</title><style>${REPORT_CSS}</style></head><body><main><div class="eyebrow">EBT DOTPICK</div><h1>Saved map changes</h1><p class="meta">${escapeHTML(startingMapLabel())}<br>Current map revision: ${data.revision}<br>History times are shown in UTC.</p><p class="callout"><strong>${count(changed)} changed ${changed===1?'dot':'dots'} · ${count(history.length)} saved ${history.length===1?'entry':'entries'} · ${count(editors)} ${editors===1?'editor':'editors'} · ${count(eligible)} eligible dots</strong></p><nav id="contents" aria-label="Report contents" tabindex="-1"><a href="#area-summary">Area summary</a><a href="#current">Current decisions</a><a href="#summary">History log</a><a href="#comments">Full comments</a></nav><button class="print" onclick="window.print()">Print / Save as PDF</button><div class="section-heading"><h2 id="area-summary">Area summary</h2><a class="back-to-contents" href="#contents"><span aria-hidden="true">↑</span>Back to contents</a></div><p class="meta">Total Conquerable and Unconquerable Euro land dots per area. Every Euro-use land dot is counted once. Dots without a unique area appear under Other / unassigned area.</p><div class="scroll"><table aria-label="Area summary"><thead><tr><th>Area</th><th>Conquerable</th><th>Unconquerable</th><th>Total Euro land</th></tr></thead><tbody>${statsHTML}</tbody></table></div><div class="section-heading"><h2 id="current">Current decisions</h2><a class="back-to-contents" href="#contents"><span aria-hidden="true">↑</span>Back to contents</a></div><p class="meta">Click any column heading to sort these decisions.</p>${!decisions.length?'<p>No manual decisions have been saved in this map yet.</p>':''}<div class="scroll"><table id="current-table" class="sortable" aria-label="Current decisions"><thead><tr>${heading('Dot','dot')}${heading('Original classification','text')}${heading('Saved classification','text')}</tr></thead><tbody>${decisionsHTML}</tbody></table></div><div class="section-heading"><h2 id="summary">Summary</h2><a class="back-to-contents" href="#contents"><span aria-hidden="true">↑</span>Back to contents</a></div><p>Click a column heading to sort; click it again to reverse the order. Click a dot to read its full comment.</p><div class="scroll"><table id="summary-table" class="sortable" aria-label="Summary"><thead><tr>${heading('Dot','dot')}${heading('When','date')}${heading('Editor','text')}${heading('What was saved','text')}</tr></thead><tbody>${summaryHTML}</tbody></table></div><div class="section-heading"><h2 id="comments">Full comments</h2><a class="back-to-contents" href="#contents"><span aria-hidden="true">↑</span>Back to contents</a></div><p class="meta">Saved comments, with repeated saves shown only once. Edits and Redo steps labelled Undone have been reversed; Undo and Redo entries keep the full sequence. Current decisions above show the saved classifications.</p>${commentsHTML}<footer class="meta">Change report for Miguel / lmviterbo. Use Save Map File in the editor to keep or move the complete working map. This report does not update the public DotPick app.</footer><p id="sort-status" class="sr-only" role="status" aria-live="polite"></p></main><script>${REPORT_SCRIPT}</scr`+'ipt></body></html>';
 }
 
 function currentActor(){return {id:'local',name:$('local-author').value.trim(),authentication:'local'};}
@@ -457,7 +511,8 @@ function refreshDraftStatus(){
   $('draft-status').classList.toggle('error',!draftAvailable||recoveryError);
   if(recoveryError){$('draft-status').textContent='Saved browser draft needs attention';return;}
   if(!draftAvailable){$('draft-status').textContent='Browser saving unavailable — use Save Map File before closing';return;}
-  $('draft-status').textContent=`Draft saved in this browser${hasFormDraft()?' · Unfinished form retained':''}`;
+  $('draft-status').textContent=localMapEdits||workingSource==='file'||hasFormDraft()?`Working copy saved in this browser${hasFormDraft()?' · Unfinished form retained':''}`:'View settings saved · Public map';
+  refreshPublicMapNotice();
 }
 function refresh(){
   $('eligible-count').textContent=[...editor.cells.values()].filter(c=>c.classification==='eligible').length.toLocaleString('en-GB');
@@ -467,11 +522,12 @@ function refresh(){
 function persist(dataChanged=false){
   if(!ready||recoveryError)return false;
   try{
-    if(dataChanged)storedData=editor.export();
+    if(dataChanged){storedData=editor.export();localMapEdits=true;}
     // Keep an unfinished form separate from confirmed JSON history.
     const pendingForm=hasFormDraft()?{dot:[selected.i,selected.j],classification:$('classification').value,reason:$('reason').value}:null;
     localStorage.setItem(DRAFT_KEY,JSON.stringify({
       data:storedData,exportedRevision,startingMap,author:$('local-author').value,
+      workingCopy:{formatVersion:1,source:workingSource,baseline:workingBaseline,localEdits:localMapEdits},
       center:[map.getCenter().lat,map.getCenter().lng],zoom:map.getZoom(),
       selected,pendingForm,basemap:$('basemap').value,overlayOpacity
     }));
@@ -698,8 +754,10 @@ $('publish-map').onclick = async () => {
 
       // 4. Trigger the local backup download
       download(data, exportFilename('euro-use-targets', 'json'));
-      exportedRevision = data.revision;
+      exportedRevision = data.revision;initial=data;
+      if(editor.doc.revision===data.revision){workingSource='public';workingBaseline=captureStartingMap(data);localMapEdits=false;}
       if (persist()) status(`Map published successfully to the live site, and local backup saved!`);
+      refreshPublicMapNotice();
     };
     reader.readAsDataURL(new Blob([contentStr], {type: 'application/json'}));
 
@@ -733,12 +791,14 @@ $('file-input').addEventListener('change',async event=>{
     if((editor.doc.revision!==exportedRevision||hasFormDraft()||recoveryError)&&!confirm('Open this map file and replace the current browser draft, including any unfinished form? Use Save Map File first if you want to keep a separate copy of your current work.'))return;
     editor=next;storedData=editor.export();exportedRevision=editor.doc.revision;
     startingMap=captureStartingMap(editor.doc);showStartingMap();
+    workingSource='file';workingBaseline=captureStartingMap(editor.doc);localMapEdits=false;
     recoveryError=false;$('recovery').hidden=true;selected={i:458,j:403,world:0};
     populateSources();renderSelection();
     if(persist())status(`Opened ${file.name}. Your saved map and history have been retained.`);
   }catch(error){status(`Could not open that map file: ${error.message} Your current map is unchanged.`,true);}
   finally{importing=false;refresh();}
 });
+$('use-public-map').onclick=resetToPublicMap;
 $('discard-draft').onclick=()=>{
   if(!confirm(`Discard the unreadable browser draft and start from the bundled revision-${initial.revision} dataset?`))return;
   try{localStorage.removeItem(DRAFT_KEY);}
@@ -753,10 +813,19 @@ let recovered=null,rawDraft=null;
 try{
   rawDraft=localStorage.getItem(DRAFT_KEY);
   if(rawDraft){
-    const candidate=JSON.parse(rawDraft),next=new C.Editor(candidate.data);
-    editor=next;storedData=editor.export();recovered=candidate;
-    startingMap=restoreStartingMap(candidate.startingMap,editor.doc);
-    exportedRevision=Number.isSafeInteger(candidate.exportedRevision)&&candidate.exportedRevision>=0?candidate.exportedRevision:0;
+    const candidate=JSON.parse(rawDraft),decision=draftDecision(initial,candidate);
+    recovered=candidate;
+    if(decision.usePublic){
+      adoptedPublicMap=decision.saved.doc.revision!==initial.revision;
+      // Retain view/author settings while using the public map. No local
+      // classification, history or unfinished form has been discarded.
+      recovered={...candidate,pendingForm:null};
+    }else{
+      editor=decision.saved;storedData=editor.export();restoredWorkingCopy=true;
+      workingSource=decision.source;workingBaseline=decision.baseline;localMapEdits=decision.edits;
+      startingMap=restoreStartingMap(candidate.startingMap,editor.doc);
+      exportedRevision=Number.isSafeInteger(candidate.exportedRevision)&&candidate.exportedRevision>=0?candidate.exportedRevision:0;
+    }
   }
 }catch(error){
   recoveryError=!!rawDraft;
@@ -781,7 +850,7 @@ if(pending&&Array.isArray(pending.dot)&&pending.dot[0]===selected.i&&pending.dot
   $('classification').value=pending.classification;$('reason').value=pending.reason;
 }
 ready=true;
-if(persist())status(recovered?'Restored your browser draft, including any unfinished form.':`Euro-use revision ${editor.doc.revision} ready. Enter your Editor Name to save changes.`);
+if(persist())status(restoredWorkingCopy?'Restored your working copy, including any unfinished form.':adoptedPublicMap?`Loaded public revision ${editor.doc.revision}; your untouched older copy was updated. View settings retained.`:`Euro-use revision ${editor.doc.revision} ready. Enter your Editor Name to save changes.`);
 refresh();
 map.on('moveend',()=>persist());
 window.addEventListener('pagehide',()=>persist());
