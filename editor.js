@@ -1,7 +1,7 @@
 /* Browser editor. Requires Leaflet 1.9.4 and the shared core.js. */
 (async function(){
 'use strict';
-const APP_VERSION='1.2.2-rc1';
+const APP_VERSION='1.3.0';
 const C=TargetCore, G=C.GRID, $=id=>document.getElementById(id);
 document.title=`EBT Dot Safari · Target map editor · v${APP_VERSION}`;
 $('draft-status').textContent=`Standalone editor · v${APP_VERSION}`;
@@ -73,7 +73,7 @@ for(const sourceLayer of [osm,esri]){
   sourceLayer.on('tileload',()=>{if(background===sourceLayer)$('map-message').hidden=true;});
 }
 
-function rebuildRows(){rows=new Map();for(const c of editor.cells.values()){if(!rows.has(c.i))rows.set(c.i,[]);rows.get(c.i).push(c);}}
+function rebuildRows(){rows=editor.rowRuns();}
 rebuildRows();
 
 // Crossed lines retain contrast at low opacity; zero still hides the overlay.
@@ -107,15 +107,17 @@ const TargetLayer=L.GridLayer.extend({createTile(coords){
   const b=this._tileCoordsToBounds(coords),nw=map.project(b.getNorthWest(),coords.z);
   const i0=Math.floor((b.getSouth()-G.minLat)/G.dotH),i1=Math.floor((b.getNorth()-G.minLat)/G.dotH);
   const j0=Math.floor((b.getWest()-G.minLon)/G.dotW),j1=Math.floor((b.getEast()-G.minLon)/G.dotW);
-  function rect(i,j){const x=map.project([G.minLat+(i+1)*G.dotH,G.minLon+j*G.dotW],coords.z).subtract(nw),y=map.project([G.minLat+i*G.dotH,G.minLon+(j+1)*G.dotW],coords.z).subtract(nw);return [x.x,x.y,y.x-x.x,y.y-x.y];}
+  function rect(i,j,lastJ=j){const x=map.project([G.minLat+(i+1)*G.dotH,G.minLon+j*G.dotW],coords.z).subtract(nw),y=map.project([G.minLat+i*G.dotH,G.minLon+(lastJ+1)*G.dotW],coords.z).subtract(nw);return [x.x,x.y,y.x-x.x,y.y-x.y];}
   for(let i=i0;i<=i1;i++)for(const c of rows.get(i)||[]){
-    if(c.j<j0||c.j>j1||c.classification==='unreviewed'||overlayOpacity===0)continue;
-    const r=rect(i,c.j);ctx.fillStyle=C.CLASSES[c.classification].color;ctx.globalAlpha=overlayOpacity;ctx.fillRect(...r);ctx.globalAlpha=1;
+    if(c.last<j0||c.first>j1||c.classification==='unreviewed'||overlayOpacity===0)continue;
+    const r=rect(i,Math.max(c.first,j0),Math.min(c.last,j1));ctx.fillStyle=C.CLASSES[c.classification].color;ctx.globalAlpha=overlayOpacity;ctx.fillRect(...r);ctx.globalAlpha=1;
     if(c.classification==='excluded')drawExcludedHatch(ctx,r,size,overlayOpacity);
     if(c.classification==='sea'){
-      ctx.save();ctx.beginPath();ctx.rect(...r);ctx.clip();ctx.globalAlpha=Math.min(.85,overlayOpacity*1.8);ctx.strokeStyle='#28629C';ctx.lineWidth=1;
-      for(let x=Math.floor((r[0]-r[3])/9)*9;x<r[0]+r[2];x+=9){ctx.beginPath();ctx.moveTo(x,r[1]+r[3]);ctx.lineTo(x+r[3],r[1]);ctx.stroke();}
-      ctx.strokeRect(r[0]+.5,r[1]+.5,r[2]-1,r[3]-1);ctx.restore();
+      const left=Math.max(0,r[0]),top=Math.max(0,r[1]),right=Math.min(size.x,r[0]+r[2]),bottom=Math.min(size.y,r[1]+r[3]);
+      if(right<=left||bottom<=top)continue;
+      ctx.save();ctx.beginPath();ctx.rect(left,top,right-left,bottom-top);ctx.clip();ctx.globalAlpha=Math.min(.85,overlayOpacity*1.8);ctx.strokeStyle='#28629C';ctx.lineWidth=1;
+      for(let x=Math.floor((left-bottom)/9)*9;x<=right-top;x+=9){ctx.beginPath();ctx.moveTo(x+bottom,bottom);ctx.lineTo(x+top,top);ctx.stroke();}
+      ctx.restore();
     }
   }
   if(coords.z>=6){
@@ -157,20 +159,128 @@ function sourceRefs(i,j){
 }
 function hasFormDraft(){return !!selected&&($('reason').value.trim()!==''||$('classification').value!==editor.get(selected.i,selected.j));}
 function leaveForm(){return !hasFormDraft()||confirm(`Discard the unsaved form for dot [${selected.i}, ${selected.j}]?`);}
+// Optional display labels read from Dot Safari; never written to map data or history.
+const dotNameReader=(()=>{
+  const root=new URL('https://shortokapi.github.io/ebt-dot-safari/');
+  const dataRoot=new URL('data/destinations/',root);
+  const names=new Map(),blocks=new Map();
+  let preferredPromise=null,manifestPromise=null;
+  const validName=value=>typeof value==='string'&&!!value.trim()&&value.length<=1000;
+  const validDot=dot=>Array.isArray(dot)&&dot.length===2&&dot.every(Number.isSafeInteger)&&dot[0]>=G.minRow&&dot[0]<=G.maxRow&&dot[1]>=G.minColumn&&dot[1]<=G.maxColumn;
+  const sameGrid=value=>value&&Object.keys(G).every(key=>value[key]===G[key]);
+  async function fetchText(url,limit){
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),8000);
+    try{
+      const response=await fetch(url,{signal:controller.signal,credentials:'omit',cache:'no-cache',referrerPolicy:'no-referrer'});
+      if(!response.ok)throw Error('Dot names unavailable');
+      const text=await response.text();
+      if(new TextEncoder().encode(text).length>limit)throw Error('Dot names too large');
+      return text;
+    }finally{clearTimeout(timer);}
+  }
+  function preferred(){
+    if(!preferredPromise)preferredPromise=(async()=>{
+      const data=JSON.parse(await fetchText(new URL('dot-name-overrides.json',root),4*1024*1024));
+      if(data?.format!=='ebt-dot-name-overrides'||data.formatVersion!==1||!Array.isArray(data.include)||!Array.isArray(data.exclude)||data.include.length>50000||data.exclude.length>50000)throw Error('Invalid preferred names');
+      const entries=new Map(),excluded=new Set(),fields=['name','nameEuroUse','nameWorldwide'];
+      for(const entry of data.include){
+        if(!validDot(entry?.dot)||entries.has(entry.dot.join('_'))||!fields.some(field=>validName(entry[field]))||fields.some(field=>Object.hasOwn(entry,field)&&!validName(entry[field])))throw Error('Invalid preferred name');
+        entries.set(entry.dot.join('_'),entry);
+      }
+      for(const dot of data.exclude){
+        if(!validDot(dot)||excluded.has(dot.join('_')))throw Error('Invalid name exclusion');
+        excluded.add(dot.join('_'));
+      }
+      return {entries,excluded};
+    })().catch(error=>{preferredPromise=null;throw error;});
+    return preferredPromise;
+  }
+  function manifest(){
+    if(!manifestPromise)manifestPromise=(async()=>{
+      const data=JSON.parse(await fetchText(new URL('manifest.json',dataRoot),1024*1024));
+      if(data?.format!=='ebt-destinations-manifest'||data.formatVersion!==2||!sameGrid(data.grid)||typeof data.version!=='string'||!/^[-\w]{1,120}$/.test(data.version)||typeof data.policyId!=='string'||!data.blocks||typeof data.blocks!=='object'||Array.isArray(data.blocks))throw Error('Invalid dot-name manifest');
+      return data;
+    })().catch(error=>{manifestPromise=null;throw error;});
+    return manifestPromise;
+  }
+  async function blockNames(data,blockKey){
+    if(blocks.has(blockKey))return blocks.get(blockKey);
+    const descriptor=data.blocks[blockKey];
+    if(!descriptor)return new Map();
+    const promise=(async()=>{
+      if(!descriptor.file?.startsWith(data.version+'/'+blockKey+'-')||!/^[-\w]+\/\d+_-?\d+-[a-f0-9]{12}\.json$/.test(descriptor.file)||!/^[a-f0-9]{64}$/.test(descriptor.sha256)||!Number.isSafeInteger(descriptor.bytes)||descriptor.bytes<1||descriptor.bytes>2*1024*1024||!Array.isArray(descriptor.cells)||descriptor.cells.length>64)throw Error('Invalid dot-name block');
+      const body=await fetchText(new URL(descriptor.file,dataRoot),descriptor.bytes);
+      const bytes=new TextEncoder().encode(body);
+      if(bytes.length!==descriptor.bytes)throw Error('Dot-name block length mismatch');
+      const digest=await crypto.subtle.digest('SHA-256',bytes);
+      const hash=Array.from(new Uint8Array(digest),byte=>byte.toString(16).padStart(2,'0')).join('');
+      if(hash!==descriptor.sha256)throw Error('Dot-name block checksum mismatch');
+      const block=JSON.parse(body);
+      if(block.format!=='ebt-destinations-block'||block.formatVersion!==data.formatVersion||block.version!==data.version||block.policyId!==data.policyId||block.block!==blockKey||!sameGrid(block.grid)||!block.cells||typeof block.cells!=='object'||Array.isArray(block.cells)||Object.keys(block.cells).length!==descriptor.cells.length)throw Error('Invalid dot-name block contents');
+      const result=new Map();
+      for(const [key,cell] of Object.entries(block.cells)){
+        if(!descriptor.cells.includes(key))throw Error('Dot-name block coverage mismatch');
+        if(cell.n===undefined)continue;
+        if(!cell.n||!['euro-use','worldwide'].every(model=>Object.hasOwn(cell.n,model)&&(cell.n[model]===null||validName(cell.n[model]))))throw Error('Invalid automatic dot name');
+        result.set(key,cell.n);
+      }
+      return result;
+    })().catch(error=>{blocks.delete(blockKey);throw error;});
+    blocks.set(blockKey,promise);
+    while(blocks.size>8)blocks.delete(blocks.keys().next().value);
+    return promise;
+  }
+  function remember(key,name){
+    names.delete(key);names.set(key,name);
+    while(names.size>512)names.delete(names.keys().next().value);
+    return name;
+  }
+  return {
+    get:(i,j)=>names.get(C.key(i,j))||null,
+    async load(i,j){
+      if(!validDot([i,j]))return null;
+      const key=C.key(i,j);
+      if(names.has(key))return names.get(key);
+      const overrides=await preferred();
+      if(overrides.excluded.has(key))return remember(key,null);
+      const entry=overrides.entries.get(key),name=entry?.nameEuroUse||entry?.name;
+      if(name)return remember(key,name);
+      let automatic=null;
+      try{
+        const data=await manifest(),keyOfBlock=`${Math.floor(i/8)}_${Math.floor(j/8)}`;
+        automatic=(await blockNames(data,keyOfBlock)).get(key);
+      }catch(error){
+        if(entry?.nameWorldwide)return remember(key,entry.nameWorldwide);
+        throw error;
+      }
+      return remember(key,automatic?.['euro-use']||entry?.nameWorldwide||automatic?.worldwide||null);
+    }
+  };
+})();
+function renderDotHeading(){
+  const {i,j}=selected;
+  const show=name=>{$('dot-name').textContent=name?`${name} Dot`:'Dot';};
+  show(dotNameReader.get(i,j));
+  dotNameReader.load(i,j).then(name=>{
+    // Updating just the heading keeps an unfinished classification/comment intact.
+    if(selected?.i===i&&selected.j===j)show(name);
+  }).catch(()=>{});
+}
 function renderSelection(){
   if(!selected)return;
   const {i,j}=selected,classification=editor.get(i,j),meta=C.CLASSES[classification];
+  renderDotHeading();
   $('dot-title').textContent=`[${i}, ${j}]`;$('current-class').replaceChildren();const sw=add($('current-class'),'span',undefined,'swatch');sw.style.background=meta.color;
       if(classification==='sea')sw.classList.add('sea-swatch');
       if(classification==='excluded')sw.classList.add('excluded-swatch');
       if(classification==='unreviewed')sw.classList.add('unreviewed-swatch');
       add($('current-class'),'span',meta.label);
   $('eligibility').textContent=classification==='eligible'?'Eligible as a Euro-use target when unconquered.':classification==='unreviewed'?'Unreviewed. Excluded from target eligibility until classified.':'Excluded from Euro-use target eligibility.';
-  $('copy-info').textContent=selected.world?`Repeated world ${selected.world>0?'+':''}${selected.world}. This is the same stored dot.`:'One stored dot, shared by every repeated world.';
   const b=C.bounds(i,j);$('bounds').replaceChildren();add($('bounds'),'div',`Latitude ${b.south.toFixed(4)}° to ${b.north.toFixed(4)}°`);add($('bounds'),'div',`Longitude ${b.west.toFixed(4)}° to ${b.east.toFixed(4)}°`);
   $('classification').value=classification;$('reason').value='';$('save-change').textContent=`Save change for [${i}, ${j}]`;$('form-error').textContent='';
   $('source-info').replaceChildren();const refs=sourceRefs(i,j);
-  if(!refs.length)add($('source-info'),'p','No source cell is recorded here. This dot starts as unreviewed.','muted');
+  if(!editor.cells.has(C.key(i,j))&&editor.background)add($('source-info'),'p','Automatic worldwide background: land is Foreign; no-land is Water Only. This dot has no individual decision recorded.','muted');
+  if(!refs.length)add($('source-info'),'p',editor.background?'No original spreadsheet cell is recorded here.':'No source cell is recorded here. This dot starts as unreviewed.','muted');
   else{const list=add($('source-info'),'ul',undefined,'sources-list');for(const ref of refs){const source=editor.doc.sources.find(s=>s.id===ref.sourceId);add(list,'li',`${source.filename} · ${source.sheet}!${ref.cell}${ref.uncoloured?' (uncoloured in source)':''}`);}}
   $('history').replaceChildren();const history=C.visibleHistory(editor.doc.history.filter(h=>h.dot[0]===i&&h.dot[1]===j));$('history-count').textContent=history.length?`(${history.length})`:'';
   const undone=C.undoneHistoryIds(history);
@@ -200,7 +310,7 @@ function populateSources(){
       $('region').append(new Option(s.filename, s.id));
     }
   });
-  $('dataset-info').replaceChildren();add($('dataset-info'),'p',`Standalone editor · v${APP_VERSION}`);add($('dataset-info'),'p',`Dataset ${editor.doc.datasetId} · ${editor.doc.sources.length} source workbooks · ${editor.cells.size.toLocaleString('en-GB')} classified dots.`);
+  $('dataset-info').replaceChildren();add($('dataset-info'),'p',`Standalone editor · v${APP_VERSION}`);add($('dataset-info'),'p',`Dataset ${editor.doc.datasetId} · ${editor.doc.sources.length} source workbooks · ${editor.cells.size.toLocaleString('en-GB')} recorded dots${editor.background?' · worldwide background active':''}.`);
   add($('dataset-info'),'p',`Grid verified against PWA v${editor.doc.baseline?.appVersion||'2.0.4'}, commit ${editor.doc.baseline?.commit||'unrecorded'}.`);
   add($('dataset-info'),'p','Leaflet 1.9.4 © Vladimir Agafonkin and contributors (BSD-2-Clause). Editor code: MIT. Curated data provenance is retained in the JSON.');
 }
