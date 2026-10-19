@@ -25,7 +25,7 @@ The map editor allows curators to visually assign eligibility statuses (Conquera
 
 ## Worldwide classification background
 
-Current test candidate: **1.3.1-rc1**.
+Version: **1.3.1**.
 
 The current master map contains a compact snapshot of the separate [worldwide land model](https://github.com/ShortOkapi/ebt-world-land-map), including its manual overrides. Dots without an individual classification resolve to Foreign where that model contains land and Water Only elsewhere. An explicit classification always wins, including a deliberate Unreviewed decision. This background does not add eligible Euro-use targets or remove every inland lake.
 
