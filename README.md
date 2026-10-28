@@ -23,9 +23,19 @@ The map editor allows curators to visually assign eligibility statuses (Conquera
 3.  **Publishing:** Clicking "Publish" prompts for a GitHub Personal Access Token. The editor uses the GitHub API to push the updated `euro-use-master-map.json` directly to the `main` branch.
 4.  **Automation:** The push triggers a GitHub Action (`compact-map.yml`) that runs `compact.js`, generating and committing a fresh `euro-use-eligibility.json` file.
 
+## Publishing reliability (1.3.2 candidate)
+
+Publishing awaits the complete GitHub operation, reports HTTP errors and times out each request after 30 seconds. The Publish button is disabled during a request and becomes usable again after success or failure. Downloading with Save Map File does not count as publishing, so you can keep a backup first and then publish the same changes.
+
+The current-file metadata request is authenticated and explicitly requests GitHub's object format, which supports the current master file's size. A failed lookup or missing SHA stops the operation before upload; the editor does not attempt to create a replacement file without a valid current SHA. Conflicts are reported without an automatic retry. If an upload times out or its connection fails, the editor cannot know whether GitHub received it: keep your map file and check the repository before trying again. The token is used only for these GitHub requests and is not saved in the browser draft.
+
+A successful upload publishes the captured map revision. Changes made or another map opened while it is running remain in your working copy and are not marked as published. The backup filename and contents describe the captured revision. Success requests a browser download; it cannot confirm where the browser saved it. A backup or browser-saving failure after GitHub accepts the map is reported separately. GitHub Actions still generates the compact map afterwards; upload success does not confirm that later workflow's completion.
+
+Candidate publishing tests use a separate local simulation page with fake credentials and intercepted GitHub responses. Ordinary Publish still writes to main. Do not enter a real token or use a real upload for synthetic tests. The simulation page is a separate testing aid, not an app file to commit.
+
 ## Worldwide classification background
 
-Version: **1.3.1**.
+Version: **1.3.2-rc.1** test candidate; current stable editor: **1.3.1**. This patch repairs publishing; the bundled map data and grid are unchanged.
 
 The current master map contains a compact snapshot of the separate [worldwide land model](https://github.com/ShortOkapi/ebt-world-land-map), including its manual overrides. Dots without an individual classification resolve to Foreign where that model contains land and Water Only elsewhere. An explicit classification always wins, including a deliberate Unreviewed decision. This background does not add eligible Euro-use targets or remove every inland lake.
 
