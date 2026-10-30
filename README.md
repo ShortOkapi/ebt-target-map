@@ -23,6 +23,14 @@ The map editor allows curators to visually assign eligibility statuses (Conquera
 3.  **Publishing:** Clicking "Publish" prompts for a GitHub Personal Access Token. The editor uses the GitHub API to push the updated `euro-use-master-map.json` directly to the `main` branch.
 4.  **Automation:** The push triggers a GitHub Action (`compact-map.yml`) that runs `compact.js`, generating and committing a fresh `euro-use-eligibility.json` file.
 
+## Compact-map generation after publishing
+
+The Generate Compact Map workflow serializes runs per branch without cancelling an active generation. Every attempt fetches that branch’s latest head, validates and compacts its master, and commits only euro-use-eligibility.json when the output differs. It uses the same core.js as the editor. It no longer relies on a separate auto-commit action.
+
+If another commit wins the race before the generated output can be pushed, the workflow fetches the latest branch and recomputes; it never rebases an old compact file onto a newer master or force-pushes. There are at most three attempts and a five-minute job limit. A failing fetch, invalid master or persistent push rejection leaves the remote branch untouched by that attempt and produces a failed Actions run. An accepted previous attempt remains a real commit. Check Actions after publishing. Branch protections and repository write permissions still apply.
+
+The workflow operates on the branch that triggered it, including a release branch. Normal editor Publish still updates main. Committing the workflow itself triggers its usual generation check; it may add a compact-output commit if that branch’s output needs updating. Local candidate tests use only temporary repositories, never the project’s GitHub remote.
+
 ## Publishing reliability (1.3.2 candidate)
 
 Publishing awaits the complete GitHub operation, reports HTTP errors and times out each request after 30 seconds. The Publish button is disabled during a request and becomes usable again after success or failure. Downloading with Save Map File does not count as publishing, so you can keep a backup first and then publish the same changes.
@@ -35,7 +43,7 @@ Candidate publishing tests use a separate local simulation page with fake creden
 
 ## Worldwide classification background
 
-Version: **1.3.2-rc.1** test candidate; current stable editor: **1.3.1**. This patch repairs publishing; the bundled map data and grid are unchanged.
+Version: **1.3.2-rc.2** test candidate; current stable editor: **1.3.1**. This patch repairs publishing, comment links and compact-map workflow races, and aligns name-data limits with DotPick. The bundled map data and grid are unchanged.
 
 The current master map contains a compact snapshot of the separate [worldwide land model](https://github.com/ShortOkapi/ebt-world-land-map), including its manual overrides. Dots without an individual classification resolve to Foreign where that model contains land and Water Only elsewhere. An explicit classification always wins, including a deliberate Unreviewed decision. This background does not add eligible Euro-use targets or remove every inland lake.
 
@@ -59,7 +67,9 @@ The editor reads the public DotPick `dot-name-overrides.json` and, on demand, th
 
 Name lookups are optional and have a timeout. Failed lookups leave the heading as Dot and its ID; they never block editing. Only the heading is updated when a name arrives, preserving an unfinished comment or classification choice. Names are labels for orientation, separate from the eligibility decisions. They are not copied into saved maps, reports or edit history. This is name retrieval, not a name editor.
 
-The manifest must match the existing grid; prepared blocks are checked against their recorded size and SHA-256 hash. A small in-memory cache avoids repeated downloads during the same visit. Source data remain in the DotPick repository: OpenStreetMap contributors (ODbL 1.0) and additional GeoNames data (CC BY 4.0), with preferred names maintained by Miguel. No Notes file or live GPS position is read or sent by this feature.
+Comment links in the side panel and Change Report leave trailing sentence punctuation outside the link. Balanced parentheses/brackets in URLs and encoded punctuation remain part of the URL; written comments are preserved exactly. Unencoded punctuation at the very end of a URL is inherently ambiguous in plain text: encode it when it is intentional URL content.
+
+The manifest must match the existing grid; prepared blocks are checked against their recorded size and SHA-256 hash. Display names use DotPick’s 600-character limit; destination folder versions use 1–120 ASCII letters, digits or hyphens, and block files have the same 2,000,000-byte ceiling. These are shared input limits, not a change to the current names or place lists. Failed name lookups still leave a numeric dot heading and do not affect map editing. A small in-memory cache avoids repeated downloads during the same visit. Source data remain in the DotPick repository: OpenStreetMap contributors (ODbL 1.0) and additional GeoNames data (CC BY 4.0), with preferred names maintained by Miguel. No Notes file or live GPS position is read or sent by this feature.
 
 The world map repeats visually when panned far enough east or west. These copies use the same stored dot IDs and decisions. This display behaviour is explained in Help rather than repeated in the editing panel.
 

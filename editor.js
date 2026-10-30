@@ -1,7 +1,7 @@
 /* Browser editor. Requires Leaflet 1.9.4 and the shared core.js. */
 (async function(){
 'use strict';
-const APP_VERSION='1.3.2-rc.1';
+const APP_VERSION='1.3.2-rc.2';
 const C=TargetCore, G=C.GRID, $=id=>document.getElementById(id);
 document.title=`EBT DotPick · Target map editor · v${APP_VERSION}`;
 $('draft-status').textContent=`Standalone editor · v${APP_VERSION}`;
@@ -190,11 +190,27 @@ function status(message,error=false){$('status').textContent=message;$('status')
 let toastTimeout; function showToast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>t.classList.remove('show'),4000);}
 function add(parent,tag,text,className){const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(className)e.className=className;parent.append(e);return e;}
 function authorLabel(h){return h.actor?.name||'Author not recorded in this older file';}
+function commentLinkParts(raw){
+  let url=raw;
+  const pairs={')':'(',']':'[','}':'{'},counts={};
+  for(const ch of raw)counts[ch]=(counts[ch]||0)+1;
+  while(url){
+    const last=url.at(-1);
+    if(/[.,;:!?]/.test(last)||pairs[last]&&(counts[last]||0)>(counts[pairs[last]]||0)){
+      counts[last]--;url=url.slice(0,-1);
+    }else break;
+  }
+  try{if(!new URL(url).hostname)return {url:null,suffix:raw};}
+  catch{return {url:null,suffix:raw};}
+  return {url,suffix:raw.slice(url.length)};
+}
 function commentText(parent,text){
   let position=0;
   for(const match of text.matchAll(/https?:\/\/[^\s<>"']+/g)){
     parent.append(document.createTextNode(text.slice(position,match.index)));
-    const link=add(parent,'a',match[0]);link.href=match[0];link.target='_blank';link.rel='noopener noreferrer';position=match.index+match[0].length;
+    const {url,suffix}=commentLinkParts(match[0]);
+    if(url){const link=add(parent,'a',url);link.href=url;link.target='_blank';link.rel='noopener noreferrer';}
+    parent.append(document.createTextNode(suffix));position=match.index+match[0].length;
   }
   parent.append(document.createTextNode(text.slice(position)));
 }
@@ -213,7 +229,7 @@ const dotNameReader=(()=>{
   let dataRoot=new URL('data/destinations/',root);
   const names=new Map(),blocks=new Map();
   let preferredPromise=null,manifestPromise=null;
-  const validName=value=>typeof value==='string'&&!!value.trim()&&value.length<=1000;
+  const validName=value=>typeof value==='string'&&!!value.trim()&&value.length<=600;
   const validDot=dot=>Array.isArray(dot)&&dot.length===2&&dot.every(Number.isSafeInteger)&&dot[0]>=G.minRow&&dot[0]<=G.maxRow&&dot[1]>=G.minColumn&&dot[1]<=G.maxColumn;
   const sameGrid=value=>value&&Object.keys(G).every(key=>value[key]===G[key]);
   async function fetchText(url,limit){
@@ -253,7 +269,7 @@ const dotNameReader=(()=>{
   function manifest(){
     if(!manifestPromise)manifestPromise=(async()=>{
       const data=JSON.parse(await fetchText(new URL('manifest.json',dataRoot),1024*1024));
-      if(data?.format!=='ebt-destinations-manifest'||data.formatVersion!==2||!sameGrid(data.grid)||typeof data.version!=='string'||!/^[-\w]{1,120}$/.test(data.version)||typeof data.policyId!=='string'||!data.blocks||typeof data.blocks!=='object'||Array.isArray(data.blocks))throw Error('Invalid dot-name manifest');
+      if(data?.format!=='ebt-destinations-manifest'||data.formatVersion!==2||!sameGrid(data.grid)||typeof data.version!=='string'||!/^[a-zA-Z0-9-]{1,120}$/.test(data.version)||typeof data.policyId!=='string'||!data.blocks||typeof data.blocks!=='object'||Array.isArray(data.blocks))throw Error('Invalid dot-name manifest');
       return data;
     })().catch(error=>{manifestPromise=null;throw error;});
     return manifestPromise;
@@ -263,7 +279,7 @@ const dotNameReader=(()=>{
     const descriptor=data.blocks[blockKey];
     if(!descriptor)return new Map();
     const promise=(async()=>{
-      if(!descriptor.file?.startsWith(data.version+'/'+blockKey+'-')||!/^[-\w]+\/\d+_-?\d+-[a-f0-9]{12}\.json$/.test(descriptor.file)||!/^[a-f0-9]{64}$/.test(descriptor.sha256)||!Number.isSafeInteger(descriptor.bytes)||descriptor.bytes<1||descriptor.bytes>2*1024*1024||!Array.isArray(descriptor.cells)||descriptor.cells.length>64)throw Error('Invalid dot-name block');
+      if(!descriptor.file?.startsWith(data.version+'/'+blockKey+'-')||!/^[a-zA-Z0-9-]{1,120}\/-?\d+_-?\d+-[a-f0-9]{12}\.json$/.test(descriptor.file)||!/^[a-f0-9]{64}$/.test(descriptor.sha256)||!Number.isSafeInteger(descriptor.bytes)||descriptor.bytes<1||descriptor.bytes>2000000||!Array.isArray(descriptor.cells)||descriptor.cells.length>64)throw Error('Invalid dot-name block');
       const body=await fetchText(new URL(descriptor.file,dataRoot),descriptor.bytes);
       const bytes=new TextEncoder().encode(body);
       if(bytes.length!==descriptor.bytes)throw Error('Dot-name block length mismatch');
@@ -379,8 +395,9 @@ function linkedComment(text){
   let position=0,html='';
   for(const match of text.matchAll(/https?:\/\/[^\s<>"']+/g)){
     html+=escapeHTML(text.slice(position,match.index));
-    const url=escapeHTML(match[0]);
-    html+=`<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+    const parts=commentLinkParts(match[0]),url=escapeHTML(parts.url||'');
+    if(parts.url)html+=`<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+    html+=escapeHTML(parts.suffix);
     position=match.index+match[0].length;
   }
   return html+escapeHTML(text.slice(position));
