@@ -31,7 +31,7 @@ If another commit wins the race before the generated output can be pushed, the w
 
 The workflow operates on the branch that triggered it, including a release branch. Normal editor Publish still updates main. Committing the workflow itself triggers its usual generation check; it may add a compact-output commit if that branch’s output needs updating. Local candidate tests use only temporary repositories, never the project’s GitHub remote.
 
-## Publishing reliability (1.3.2 candidate)
+## Publishing reliability (1.3.2)
 
 Publishing awaits the complete GitHub operation, reports HTTP errors and times out each request after 30 seconds. The Publish button is disabled during a request and becomes usable again after success or failure. Downloading with Save Map File does not count as publishing, so you can keep a backup first and then publish the same changes.
 
@@ -39,11 +39,11 @@ The current-file metadata request is authenticated and explicitly requests GitHu
 
 A successful upload publishes the captured map revision. Changes made or another map opened while it is running remain in your working copy and are not marked as published. The backup filename and contents describe the captured revision. Success requests a browser download; it cannot confirm where the browser saved it. A backup or browser-saving failure after GitHub accepts the map is reported separately. GitHub Actions still generates the compact map afterwards; upload success does not confirm that later workflow's completion.
 
-Candidate publishing tests use a separate local simulation page with fake credentials and intercepted GitHub responses. Ordinary Publish still writes to main. Do not enter a real token or use a real upload for synthetic tests. The simulation page is a separate testing aid, not an app file to commit.
+Publishing tests use a separate local simulation page with fake credentials and intercepted GitHub responses. Ordinary Publish still writes to main. Do not enter a real token or use a real upload for synthetic tests. The simulation page is a separate testing aid, not an app file to commit.
 
 ## Worldwide classification background
 
-Version: **1.3.2-rc.4** test candidate; current stable editor: **1.3.1**. Publishing, comment-link and workflow fixes are retained. The bundled master and compact map now advance together from revision **104 to 105**, refreshing only the pinned worldwide background. The grid, **4,171** eligible Euro-use dots, **6,551** individual cell records, all **103** history entries and original source references are preserved.
+Version: **1.3.2**, the reliability update following **1.3.1**. Publishing, comment-link and workflow fixes are retained, with an inspector note for wholly or partly hidden polar dots. The bundled master and compact map are revision **105**, refreshed from revision 104 only in their pinned worldwide background. The grid, **4,171** eligible Euro-use dots, **6,551** individual cell records, all **103** history entries and original source references are preserved.
 
 The current master map contains a compact snapshot of the separate [worldwide land model](https://github.com/ShortOkapi/ebt-world-land-map), including its manual overrides. Dots without an individual classification resolve to Foreign where that model contains land and Water Only elsewhere. An explicit classification always wins, including a deliberate Unreviewed decision. This background does not add eligible Euro-use targets or remove every inland lake.
 
@@ -53,7 +53,7 @@ The 19 previously Unreviewed remnants reviewed by Miguel have been assigned Fore
 
 Opening an older map without this optional background preserves its original defaults; importing that map does not silently install a new background. Save Map File and Undo/Redo preserve an explicit Unreviewed choice. Untouched public copies follow the current public map on reopening. A retained edited/file copy can still contain an older background; use the explicit public-map button after keeping any work you need.
 
-During candidate testing, use **Save Map File** to retain your work. **Publish writes to main**, regardless of the code branch being tested. Commit the candidate's prepared master and compact files to its release branch through the repository editor; use Publish for normal map maintenance after the stable version is merged.
+Use **Save Map File** to retain your work. **Publish writes to main**, regardless of the code branch being tested. Test credentials and synthetic edits belong in local simulations; commit prepared release data through the repository editor. Normal map maintenance after deployment uses the existing Publish workflow.
 
 Revision **105** pins world-source commit **840b9d5eac95b9e61bf2375589c63cc8bbc6ccaa**. Its base SHA-256 is **1b16527f76d26acb1ee0028314187890981060ef3f0148d97d701e222db36818** and overrides SHA-256 is **f671bf8e7799b1624fe3189c4d84cb7601133aad2d089d148153c7ee5bd4a2ea**. Both hashes describe the exact files at that commit. The source base is unchanged; the removed live placeholder exclusion restores Antarctic **[10, 10]** to the background, changing its land count from **201,341 to 201,342**. No illustrative override file is applied. The background alone treats that unrecorded land dot as Foreign; it is not a new eligible Euro-use target. The examples remain documented separately in the source repository.
 
@@ -81,7 +81,7 @@ The world map repeats visually when panned far enough east or west. These copies
 
 The browser records whether a map came from the public starting file or Open Map, its starting revision, and whether local edits have been confirmed. Exporting a file keeps the local-edit flag. Publishing successfully resets that flag only when the sent revision still matches the current working map. An unfinished form is protected separately. A deliberately opened file stays selected until you choose the public map. Older drafts without a starting reference or usable metadata are retained for review. For older drafts with a recorded starting revision, an equal current revision and no unfinished form identify an untouched copy; those can follow the public map. Old formats did not record whether a file was opened manually.
 
-The working-copy behaviour above is unchanged in rc.3. Its bundled revision-105 background is a separate data refresh; retained edited/file copies keep their own background until you deliberately choose the public starting map. Use public map replaces your working copy explicitly; keep a downloaded copy first if needed. The editor fetches its public JSON with revalidation before deciding which working copy to use.
+The working-copy behaviour above remains unchanged in 1.3.2. Its bundled revision-105 background is a separate data refresh; retained edited/file copies keep their own background until you deliberately choose the public starting map. Use public map replaces your working copy explicitly; keep a downloaded copy first if needed. The editor fetches its public JSON with revalidation before deciding which working copy to use.
 
 ## Provenance & Credits
 
