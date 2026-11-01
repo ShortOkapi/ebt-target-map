@@ -1,7 +1,7 @@
 /* Browser editor. Requires Leaflet 1.9.4 and the shared core.js. */
 (async function(){
 'use strict';
-const APP_VERSION='1.3.1';
+const APP_VERSION='1.3.2';
 const C=TargetCore, G=C.GRID, $=id=>document.getElementById(id);
 document.title=`EBT DotPick · Target map editor · v${APP_VERSION}`;
 $('draft-status').textContent=`Standalone editor · v${APP_VERSION}`;
@@ -20,6 +20,7 @@ const DRAFT_KEY='ebt-target-editor:euro-use:v1';
 let overlayOpacity=.35, ready=false, importing=false;
 let editor=new C.Editor(initial), selected=null, rows=new Map();
 let exportedRevision=initial.revision, draftAvailable=false, recoveryError=false;
+let lastPublishedRevision=null;
 let storedData=editor.export();
 let startingMap=captureStartingMap(initial);
 let workingSource='public',workingBaseline=captureStartingMap(initial),localMapEdits=false;
@@ -182,6 +183,23 @@ const TargetLayer=L.GridLayer.extend({createTile(coords){
   if(selected&&selected.i>=i0&&selected.i<=i1&&selected.j>=j0&&selected.j<=j1){
     const r=rect(selected.i,selected.j);ctx.strokeStyle='white';ctx.lineWidth=6;ctx.strokeRect(...r);ctx.strokeStyle='#113f63';ctx.lineWidth=3;ctx.strokeRect(...r);
   }
+  // Display edges only; keep the stored grid and ordinary red lines unchanged.
+  if (coords.z >= 6) {
+    const world = map.getPixelWorldBounds(coords.z);
+    const left = coords.x * size.x, top = coords.y * size.y;
+    ctx.save(); ctx.strokeStyle = '#17354b'; ctx.lineWidth = 1.5; ctx.setLineDash([6, 4]);
+    for (const x of [world.min.x - left, world.max.x - left]) {
+      if (x < -1e-7 || x > size.x + 1e-7) continue;
+      const edge = Math.max(0, Math.min(size.x, x));
+      ctx.beginPath(); ctx.moveTo(edge, 0); ctx.lineTo(edge, size.y); ctx.stroke();
+    }
+    for (const y of [world.min.y - top, world.max.y - top]) {
+      if (y < -1e-7 || y > size.y + 1e-7) continue;
+      const edge = Math.max(0, Math.min(size.y, y));
+      ctx.beginPath(); ctx.moveTo(0, edge); ctx.lineTo(size.x, edge); ctx.stroke();
+    }
+    ctx.restore();
+  }
   return canvas;
 }});
 const layer=new TargetLayer({keepBuffer:1,updateWhenZooming:false,zIndex:10}).addTo(map);
@@ -189,11 +207,27 @@ function status(message,error=false){$('status').textContent=message;$('status')
 let toastTimeout; function showToast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>t.classList.remove('show'),4000);}
 function add(parent,tag,text,className){const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(className)e.className=className;parent.append(e);return e;}
 function authorLabel(h){return h.actor?.name||'Author not recorded in this older file';}
+function commentLinkParts(raw){
+  let url=raw;
+  const pairs={')':'(',']':'[','}':'{'},counts={};
+  for(const ch of raw)counts[ch]=(counts[ch]||0)+1;
+  while(url){
+    const last=url.at(-1);
+    if(/[.,;:!?]/.test(last)||pairs[last]&&(counts[last]||0)>(counts[pairs[last]]||0)){
+      counts[last]--;url=url.slice(0,-1);
+    }else break;
+  }
+  try{if(!new URL(url).hostname)return {url:null,suffix:raw};}
+  catch{return {url:null,suffix:raw};}
+  return {url,suffix:raw.slice(url.length)};
+}
 function commentText(parent,text){
   let position=0;
   for(const match of text.matchAll(/https?:\/\/[^\s<>"']+/g)){
     parent.append(document.createTextNode(text.slice(position,match.index)));
-    const link=add(parent,'a',match[0]);link.href=match[0];link.target='_blank';link.rel='noopener noreferrer';position=match.index+match[0].length;
+    const {url,suffix}=commentLinkParts(match[0]);
+    if(url){const link=add(parent,'a',url);link.href=url;link.target='_blank';link.rel='noopener noreferrer';}
+    parent.append(document.createTextNode(suffix));position=match.index+match[0].length;
   }
   parent.append(document.createTextNode(text.slice(position)));
 }
@@ -212,7 +246,7 @@ const dotNameReader=(()=>{
   let dataRoot=new URL('data/destinations/',root);
   const names=new Map(),blocks=new Map();
   let preferredPromise=null,manifestPromise=null;
-  const validName=value=>typeof value==='string'&&!!value.trim()&&value.length<=1000;
+  const validName=value=>typeof value==='string'&&!!value.trim()&&value.length<=600;
   const validDot=dot=>Array.isArray(dot)&&dot.length===2&&dot.every(Number.isSafeInteger)&&dot[0]>=G.minRow&&dot[0]<=G.maxRow&&dot[1]>=G.minColumn&&dot[1]<=G.maxColumn;
   const sameGrid=value=>value&&Object.keys(G).every(key=>value[key]===G[key]);
   async function fetchText(url,limit){
@@ -252,7 +286,7 @@ const dotNameReader=(()=>{
   function manifest(){
     if(!manifestPromise)manifestPromise=(async()=>{
       const data=JSON.parse(await fetchText(new URL('manifest.json',dataRoot),1024*1024));
-      if(data?.format!=='ebt-destinations-manifest'||data.formatVersion!==2||!sameGrid(data.grid)||typeof data.version!=='string'||!/^[-\w]{1,120}$/.test(data.version)||typeof data.policyId!=='string'||!data.blocks||typeof data.blocks!=='object'||Array.isArray(data.blocks))throw Error('Invalid dot-name manifest');
+      if(data?.format!=='ebt-destinations-manifest'||data.formatVersion!==2||!sameGrid(data.grid)||typeof data.version!=='string'||!/^[a-zA-Z0-9-]{1,120}$/.test(data.version)||typeof data.policyId!=='string'||!data.blocks||typeof data.blocks!=='object'||Array.isArray(data.blocks))throw Error('Invalid dot-name manifest');
       return data;
     })().catch(error=>{manifestPromise=null;throw error;});
     return manifestPromise;
@@ -262,7 +296,7 @@ const dotNameReader=(()=>{
     const descriptor=data.blocks[blockKey];
     if(!descriptor)return new Map();
     const promise=(async()=>{
-      if(!descriptor.file?.startsWith(data.version+'/'+blockKey+'-')||!/^[-\w]+\/\d+_-?\d+-[a-f0-9]{12}\.json$/.test(descriptor.file)||!/^[a-f0-9]{64}$/.test(descriptor.sha256)||!Number.isSafeInteger(descriptor.bytes)||descriptor.bytes<1||descriptor.bytes>2*1024*1024||!Array.isArray(descriptor.cells)||descriptor.cells.length>64)throw Error('Invalid dot-name block');
+      if(!descriptor.file?.startsWith(data.version+'/'+blockKey+'-')||!/^[a-zA-Z0-9-]{1,120}\/-?\d+_-?\d+-[a-f0-9]{12}\.json$/.test(descriptor.file)||!/^[a-f0-9]{64}$/.test(descriptor.sha256)||!Number.isSafeInteger(descriptor.bytes)||descriptor.bytes<1||descriptor.bytes>2000000||!Array.isArray(descriptor.cells)||descriptor.cells.length>64)throw Error('Invalid dot-name block');
       const body=await fetchText(new URL(descriptor.file,dataRoot),descriptor.bytes);
       const bytes=new TextEncoder().encode(body);
       if(bytes.length!==descriptor.bytes)throw Error('Dot-name block length mismatch');
@@ -329,8 +363,16 @@ function renderSelection(){
       if(classification==='excluded')sw.classList.add('excluded-swatch');
       if(classification==='unreviewed')sw.classList.add('unreviewed-swatch');
       add($('current-class'),'span',meta.label);
+  const b=C.bounds(i,j),limit=map.options.crs.projection.MAX_LATITUDE;
+  const outside=b.south>=limit||b.north<=-limit,partial=!outside&&(b.north>limit||b.south<-limit);
+  const visibility=$('map-visibility-note'),edge=b.north>limit?'north':'south';
+  const cutoff=`${limit.toFixed(2)}°${edge==='north'?'N':'S'}`;
+  visibility.hidden=!outside&&!partial;
+  visibility.textContent=outside
+    ?`This dot is outside the map’s visible latitude range, beyond its ${edge} limit (${cutoff}). You can still inspect and edit it here.`
+    :partial?`Only part of this dot is visible on the map; it crosses the ${edge} display limit (${cutoff}).`:'';
   $('eligibility').textContent=classification==='eligible'?'Eligible as a Euro-use target when unconquered.':classification==='unreviewed'?'Unreviewed. Excluded from target eligibility until classified.':'Excluded from Euro-use target eligibility.';
-  const b=C.bounds(i,j);$('bounds').replaceChildren();add($('bounds'),'div',`Latitude ${b.south.toFixed(4)}° to ${b.north.toFixed(4)}°`);add($('bounds'),'div',`Longitude ${b.west.toFixed(4)}° to ${b.east.toFixed(4)}°`);
+  $('bounds').replaceChildren();add($('bounds'),'div',`Latitude ${b.south.toFixed(4)}° to ${b.north.toFixed(4)}°`);add($('bounds'),'div',`Longitude ${b.west.toFixed(4)}° to ${b.east.toFixed(4)}°`);
   $('classification').value=classification;$('reason').value='';$('save-change').textContent=`Save change for [${i}, ${j}]`;$('form-error').textContent='';
   $('source-info').replaceChildren();const refs=sourceRefs(i,j);
   if(!editor.cells.has(C.key(i,j))&&editor.background)add($('source-info'),'p','Automatic worldwide background: land is Foreign; no-land is Water Only. This dot has no individual decision recorded.','muted');
@@ -378,8 +420,9 @@ function linkedComment(text){
   let position=0,html='';
   for(const match of text.matchAll(/https?:\/\/[^\s<>"']+/g)){
     html+=escapeHTML(text.slice(position,match.index));
-    const url=escapeHTML(match[0]);
-    html+=`<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+    const parts=commentLinkParts(match[0]),url=escapeHTML(parts.url||'');
+    if(parts.url)html+=`<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+    html+=escapeHTML(parts.suffix);
     position=match.index+match[0].length;
   }
   return html+escapeHTML(text.slice(position));
@@ -534,7 +577,8 @@ function persist(dataChanged=false){
     draftAvailable=true;refreshDraftStatus();return true;
   }catch(error){
     draftAvailable=false;refreshDraftStatus();
-    status('The browser could not save this draft. Confirm any unfinished comment with Save change, then use Save Map File before closing.',true);
+    const receipt=lastPublishedRevision===null?'':`The last confirmed GitHub upload was map revision ${lastPublishedRevision}. `;
+    status(receipt+'The browser could not save this draft. Confirm any unfinished comment with Save change, then use Save Map File before closing.',true);
     return false;
   }
 }
@@ -708,61 +752,87 @@ for(const action of ['undo','redo'])$(action).onclick=()=>{
 $('review').onclick=review;
 $('export-file').onclick=exportDataset;
 
-$('publish-map').onclick = async () => {
-  if (!readyToExport()) return;
-  if (editor.doc.revision === exportedRevision) {
-    showToast('No new changes to publish. The live map is already up to date.');
-    return;
+let publishing=false;
+function publishBase64(text){
+  const bytes=new TextEncoder().encode(text),parts=[];
+  for(let offset=0;offset<bytes.length;offset+=32768){
+    parts.push(String.fromCharCode(...bytes.subarray(offset,offset+32768)));
   }
-  const token = prompt("Enter your GitHub Personal Access Token to publish to the live site:");
-  if (!token) return;
-
-  status("Publishing to GitHub...");
-  try {
-    const repo = 'ShortOkapi/ebt-target-map';
-    const path = 'euro-use-master-map.json';
-
-    // 1. Find the exact file currently on GitHub so we can safely overwrite it
-    let sha = '';
-    const getRes = await fetch(`https://api.github.com/repos/${repo}/contents/${path}?ref=main`);
-    if (getRes.ok) sha = (await getRes.json()).sha;
-
-    // 2. Prepare the new data securely
-    const data = editor.export();
-    const contentStr = JSON.stringify(data, null, 2) + '\n';
-    const reader = new FileReader();
-
-    reader.onloadend = async () => {
-      const base64Content = reader.result.split(',')[1];
-
-      // 3. Upload the new file to your main branch
-      const putRes = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: `Publish map revision ${data.revision} from editor`,
-          content: base64Content,
-          sha: sha || undefined,
-          branch: 'main'
-        })
-      });
-
-      if (!putRes.ok) throw new Error('Upload refused. Your GitHub token has likely expired. Time to generate a new token in GitHub Settings and update your saved copy!');
-
-      // 4. Trigger the local backup download
-      download(data, exportFilename('euro-use-targets', 'json'));
-      exportedRevision = data.revision;initial=data;
-      if(editor.doc.revision===data.revision){workingSource='public';workingBaseline=captureStartingMap(data);localMapEdits=false;}
-      if (persist()) status(`Map published successfully to the live site, and local backup saved!`);
-      refreshPublicMapNotice();
-    };
-    reader.readAsDataURL(new Blob([contentStr], {type: 'application/json'}));
-
-  } catch (error) {
-    status(`Publishing error: ${error.message}`, true);
+  return btoa(parts.join(''));
+}
+async function publishGitHubRequest(url,token,method='GET',body){
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),30000);
+  try{
+    const response=await fetch(url,{
+      method,credentials:'omit',cache:'no-store',signal:controller.signal,
+      headers:{Authorization:`Bearer ${token}`,Accept:method==='GET'?'application/vnd.github.object+json':'application/vnd.github+json',
+        ...(method==='PUT'?{'Content-Type':'application/json'}:{})},
+      ...(body===undefined?{}:{body:JSON.stringify(body)})
+    });
+    if(!response.ok){
+      let detail='';
+      try{const data=await response.json();if(typeof data.message==='string')detail=data.message.split(token).join('[token omitted]').slice(0,400);}catch{}
+      const advice=response.status===401?'Check that your token is valid.'
+        :response.status===403?'Check the token permissions and any GitHub API-limit message.'
+        :response.status===409?'Save your map file and review the latest live map before trying again.'
+        :response.status===422?'GitHub could not validate this update; review the details before retrying.':'';
+      const error=new Error(`GitHub ${method} failed (HTTP ${response.status}). ${[advice,detail].filter(Boolean).join(' ')}`.trim());
+      error.httpStatus=response.status;throw error;
+    }
+    if(method==='PUT')return;
+    try{return await response.json();}
+    catch(error){if(error.name==='AbortError')throw error;throw new Error('Could not read GitHub’s current-file details.');}
+  }catch(error){
+    if(error.name==='AbortError')throw new Error(`GitHub ${method} timed out after 30 seconds.`);
+    throw error;
+  }finally{clearTimeout(timer);}
+}
+$('publish-map').onclick=async()=>{
+  if(publishing||!readyToExport())return;
+  // A downloaded backup is not evidence that this working map was published.
+  if(!localMapEdits&&workingSource==='public'&&editor.doc.datasetId===initial.datasetId&&editor.doc.revision===initial.revision){
+    showToast('No local map changes to publish.');return;
+  }
+  const token=prompt('Enter your GitHub Personal Access Token to publish to the live site:')?.trim();
+  if(!token)return;
+  const button=$('publish-map'),label=button.textContent;
+  publishing=true;button.disabled=true;button.textContent='Publishing…';button.setAttribute('aria-busy','true');
+  status('Publishing to GitHub…');
+  let uploadStarted=false,uploaded=false;
+  try{
+    // Keep the data, editor identity and backup filename from the moment Publish was chosen.
+    const sourceEditor=editor,data=editor.export(),filename=exportFilename('euro-use-targets','json');
+    const content=publishBase64(JSON.stringify(data,null,2)+'\n');
+    const url='https://api.github.com/repos/ShortOkapi/ebt-target-map/contents/euro-use-master-map.json';
+    const current=await publishGitHubRequest(url+'?ref=main',token);
+    if(!current||typeof current.sha!=='string'||!/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/i.test(current.sha)){
+      throw new Error('GitHub did not return a valid current-file SHA. No upload was attempted.');
+    }
+    uploadStarted=true;
+    await publishGitHubRequest(url,token,'PUT',{
+      message:`Publish map revision ${data.revision} from editor`,content,sha:current.sha,branch:'main'
+    });
+    uploaded=true;initial=data;lastPublishedRevision=data.revision;
+    const unchanged=editor===sourceEditor&&editor.doc.revision===data.revision;
+    if(unchanged){workingSource='public';workingBaseline=captureStartingMap(data);localMapEdits=false;}
+    let backupFailed=false;
+    try{
+      download(data,filename);
+      if(editor===sourceEditor)exportedRevision=Math.max(exportedRevision,data.revision);
+    }catch{backupFailed=true;}
+    const saved=persist();refreshPublicMapNotice();
+    const message=[`Map revision ${data.revision} published to GitHub.`,
+      backupFailed?'The backup download could not be started; use Save Map File.':'Backup download requested.',
+      unchanged?'':'Your current working map still has unpublished changes.',
+      saved?'':'Browser saving failed; keep a downloaded map file before closing.',
+      'The compact map is generated separately by GitHub Actions.'].filter(Boolean).join(' ');
+    status(message,backupFailed||!saved);
+  }catch(error){
+    const uncertain=uploadStarted&&!uploaded&&!Number.isInteger(error.httpStatus);
+    const lead=uploaded?'The map was published, but a browser step failed':uncertain?'Publishing could not be confirmed':'Publishing error';
+    status(`${lead}: ${error.message}${uncertain?' Keep your map file and check the repository before retrying.':''}`,true);
+  }finally{
+    publishing=false;button.disabled=false;button.textContent=label;button.removeAttribute('aria-busy');
   }
 };
 $('export-from-review').onclick=exportDataset;

@@ -9,21 +9,50 @@ on:
       - '.github/workflows/compact-map.yml'
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   compact:
+    if: github.ref_type == 'branch'
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
       contents: write
-    
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Run compaction script
-        run: node compact.js
-
-      - name: Commit and push the compact file
-        uses: stefanzweifel/git-auto-commit-action@v5
+      - name: Checkout the latest branch
+        uses: actions/checkout@v6
         with:
-          commit_message: "Auto-generate compact eligibility map"
-          file_pattern: "euro-use-eligibility.json"
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+
+      - name: Generate and publish a compact map from the latest master
+        shell: bash
+        env:
+          TARGET_BRANCH: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          for attempt in 1 2 3; do
+            git fetch origin "refs/heads/$TARGET_BRANCH"
+            git checkout --detach FETCH_HEAD
+            node compact.js
+            if git diff --quiet -- euro-use-eligibility.json; then
+              echo 'The compact map already matches the latest master.'
+              exit 0
+            fi
+            git add -- euro-use-eligibility.json
+            git commit -m 'Auto-generate compact eligibility map'
+            if git push origin "HEAD:refs/heads/$TARGET_BRANCH"; then
+              exit 0
+            fi
+            echo "Push attempt $attempt was rejected or unconfirmed; rebuilding from the latest branch."
+          done
+          echo '::error::Could not publish the compact map after three attempts. Check branch permissions and newer commits.'
+          exit 1
