@@ -43,7 +43,7 @@ Candidate publishing tests use a separate local simulation page with fake creden
 
 ## Worldwide classification background
 
-Version: **1.3.2-rc.3** test candidate; current stable editor: **1.3.1**. Publishing, comment-link and workflow fixes are retained. The bundled master and compact map now advance together from revision **104 to 105**, refreshing only the pinned worldwide background. The grid, **4,171** eligible Euro-use dots, **6,551** individual cell records, all **103** history entries and original source references are preserved.
+Version: **1.3.2-rc.4** test candidate; current stable editor: **1.3.1**. Publishing, comment-link and workflow fixes are retained. The bundled master and compact map now advance together from revision **104 to 105**, refreshing only the pinned worldwide background. The grid, **4,171** eligible Euro-use dots, **6,551** individual cell records, all **103** history entries and original source references are preserved.
 
 The current master map contains a compact snapshot of the separate [worldwide land model](https://github.com/ShortOkapi/ebt-world-land-map), including its manual overrides. Dots without an individual classification resolve to Foreign where that model contains land and Water Only elsewhere. An explicit classification always wins, including a deliberate Unreviewed decision. This background does not add eligible Euro-use targets or remove every inland lake.
 
@@ -72,6 +72,8 @@ Name lookups are optional and have a timeout. Failed lookups leave the heading a
 Comment links in the side panel and Change Report leave trailing sentence punctuation outside the link. Balanced parentheses/brackets in URLs and encoded punctuation remain part of the URL; written comments are preserved exactly. Unencoded punctuation at the very end of a URL is inherently ambiguous in plain text: encode it when it is intentional URL content.
 
 The manifest must match the existing grid; prepared blocks are checked against their recorded size and SHA-256 hash. Display names use DotPick’s 600-character limit; destination folder versions use 1–120 ASCII letters, digits or hyphens, and block files have the same 2,000,000-byte ceiling. These are shared input limits, not a change to the current names or place lists. Failed name lookups still leave a numeric dot heading and do not affect map editing. A small in-memory cache avoids repeated downloads during the same visit. Source data remain in the DotPick repository: OpenStreetMap contributors (ODbL 1.0) and additional GeoNames data (CC BY 4.0), with preferred names maintained by Miguel. No Notes file or live GPS position is read or sent by this feature.
+
+The inspector explains when a selected dot lies wholly outside the map’s visible latitude range, above or below about **85.05°**. The note appears directly below its classification and above its separate eligibility explanation. Dots in the two partly visible edge rows get a partial-visibility note instead. Ordinary dots show no extra note, even when currently off screen. These messages use the map projection’s limit and the original dot bounds; switching background imagery or panning does not change their meaning. The full grid remains inspectable/editable by ID, and no classification or geometry is changed.
 
 The world map repeats visually when panned far enough east or west. These copies use the same stored dot IDs and decisions. This display behaviour is explained in Help rather than repeated in the editing panel.
 

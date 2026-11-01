@@ -1,7 +1,7 @@
 /* Browser editor. Requires Leaflet 1.9.4 and the shared core.js. */
 (async function(){
 'use strict';
-const APP_VERSION='1.3.2-rc.3';
+const APP_VERSION='1.3.2-rc.4';
 const C=TargetCore, G=C.GRID, $=id=>document.getElementById(id);
 document.title=`EBT DotPick · Target map editor · v${APP_VERSION}`;
 $('draft-status').textContent=`Standalone editor · v${APP_VERSION}`;
@@ -346,8 +346,16 @@ function renderSelection(){
       if(classification==='excluded')sw.classList.add('excluded-swatch');
       if(classification==='unreviewed')sw.classList.add('unreviewed-swatch');
       add($('current-class'),'span',meta.label);
+  const b=C.bounds(i,j),limit=map.options.crs.projection.MAX_LATITUDE;
+  const outside=b.south>=limit||b.north<=-limit,partial=!outside&&(b.north>limit||b.south<-limit);
+  const visibility=$('map-visibility-note'),edge=b.north>limit?'north':'south';
+  const cutoff=`${limit.toFixed(2)}°${edge==='north'?'N':'S'}`;
+  visibility.hidden=!outside&&!partial;
+  visibility.textContent=outside
+    ?`This dot is outside the map’s visible latitude range, beyond its ${edge} limit (${cutoff}). You can still inspect and edit it here.`
+    :partial?`Only part of this dot is visible on the map; it crosses the ${edge} display limit (${cutoff}).`:'';
   $('eligibility').textContent=classification==='eligible'?'Eligible as a Euro-use target when unconquered.':classification==='unreviewed'?'Unreviewed. Excluded from target eligibility until classified.':'Excluded from Euro-use target eligibility.';
-  const b=C.bounds(i,j);$('bounds').replaceChildren();add($('bounds'),'div',`Latitude ${b.south.toFixed(4)}° to ${b.north.toFixed(4)}°`);add($('bounds'),'div',`Longitude ${b.west.toFixed(4)}° to ${b.east.toFixed(4)}°`);
+  $('bounds').replaceChildren();add($('bounds'),'div',`Latitude ${b.south.toFixed(4)}° to ${b.north.toFixed(4)}°`);add($('bounds'),'div',`Longitude ${b.west.toFixed(4)}° to ${b.east.toFixed(4)}°`);
   $('classification').value=classification;$('reason').value='';$('save-change').textContent=`Save change for [${i}, ${j}]`;$('form-error').textContent='';
   $('source-info').replaceChildren();const refs=sourceRefs(i,j);
   if(!editor.cells.has(C.key(i,j))&&editor.background)add($('source-info'),'p','Automatic worldwide background: land is Foreign; no-land is Water Only. This dot has no individual decision recorded.','muted');
