@@ -14,9 +14,9 @@
     "maxRow": 641
   },
   "datasetId": "euro-use-curated-2026-09-17",
-  "revision": 104,
+  "revision": 105,
   "createdAt": "2026-09-17",
-  "updatedAt": "2026-10-18T02:05:42.331Z",
+  "updatedAt": "2026-10-31T02:54:35.126Z",
   "model": {
     "id": "euro-use",
     "name": "Euro-use area",
@@ -74014,7 +74014,7 @@
   ],
   "classificationBackground": {
     "formatVersion": 1,
-    "landCount": 201341,
+    "landCount": 201342,
     "landRanges": [
       [
         0,
@@ -74069,11 +74069,6 @@
       [
         10,
         -3,
-        9
-      ],
-      [
-        10,
-        11,
         853
       ],
       [
@@ -99479,9 +99474,9 @@
     ],
     "source": {
       "repository": "ShortOkapi/ebt-world-land-map",
-      "commit": "8ea8986c476861619994e271af4610ce2567a000",
+      "commit": "840b9d5eac95b9e61bf2375589c63cc8bbc6ccaa",
       "baseSha256": "1b16527f76d26acb1ee0028314187890981060ef3f0148d97d701e222db36818",
-      "overridesSha256": "b71b1eb7ecaca5a3f7ccfe238399fe0835c99ef9d8fef7e94d1a257a402d3971",
+      "overridesSha256": "f671bf8e7799b1624fe3189c4d84cb7601133aad2d089d148153c7ee5bd4a2ea",
       "baseGeneratedAt": "2026-10-01T12:03:10.830Z",
       "licence": "ODbL-1.0"
     }

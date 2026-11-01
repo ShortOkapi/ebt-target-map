@@ -43,7 +43,7 @@ Candidate publishing tests use a separate local simulation page with fake creden
 
 ## Worldwide classification background
 
-Version: **1.3.2-rc.2** test candidate; current stable editor: **1.3.1**. This patch repairs publishing, comment links and compact-map workflow races, and aligns name-data limits with DotPick. The bundled map data and grid are unchanged.
+Version: **1.3.2-rc.3** test candidate; current stable editor: **1.3.1**. Publishing, comment-link and workflow fixes are retained. The bundled master and compact map now advance together from revision **104 to 105**, refreshing only the pinned worldwide background. The grid, **4,171** eligible Euro-use dots, **6,551** individual cell records, all **103** history entries and original source references are preserved.
 
 The current master map contains a compact snapshot of the separate [worldwide land model](https://github.com/ShortOkapi/ebt-world-land-map), including its manual overrides. Dots without an individual classification resolve to Foreign where that model contains land and Water Only elsewhere. An explicit classification always wins, including a deliberate Unreviewed decision. This background does not add eligible Euro-use targets or remove every inland lake.
 
@@ -54,6 +54,8 @@ The 19 previously Unreviewed remnants reviewed by Miguel have been assigned Fore
 Opening an older map without this optional background preserves its original defaults; importing that map does not silently install a new background. Save Map File and Undo/Redo preserve an explicit Unreviewed choice. Untouched public copies follow the current public map on reopening. A retained edited/file copy can still contain an older background; use the explicit public-map button after keeping any work you need.
 
 During candidate testing, use **Save Map File** to retain your work. **Publish writes to main**, regardless of the code branch being tested. Commit the candidate's prepared master and compact files to its release branch through the repository editor; use Publish for normal map maintenance after the stable version is merged.
+
+Revision **105** pins world-source commit **840b9d5eac95b9e61bf2375589c63cc8bbc6ccaa**. Its base SHA-256 is **1b16527f76d26acb1ee0028314187890981060ef3f0148d97d701e222db36818** and overrides SHA-256 is **f671bf8e7799b1624fe3189c4d84cb7601133aad2d089d148153c7ee5bd4a2ea**. Both hashes describe the exact files at that commit. The source base is unchanged; the removed live placeholder exclusion restores Antarctic **[10, 10]** to the background, changing its land count from **201,341 to 201,342**. No illustrative override file is applied. The background alone treats that unrecorded land dot as Foreign; it is not a new eligible Euro-use target. The examples remain documented separately in the source repository.
 
 Refreshing the pinned background is a data preparation operation: regenerate its merged ranges from the recorded world-land source and overrides, preserve individual decisions and history, increment the master revision, validate, and regenerate the compact export with core.js. Do not hand-edit thousands of background ranges. Preparation scripts stay outside this lightweight repository.
 
@@ -77,7 +79,7 @@ The world map repeats visually when panned far enough east or west. These copies
 
 The browser records whether a map came from the public starting file or Open Map, its starting revision, and whether local edits have been confirmed. Exporting a file keeps the local-edit flag. Publishing successfully resets that flag only when the sent revision still matches the current working map. An unfinished form is protected separately. A deliberately opened file stays selected until you choose the public map. Older drafts without a starting reference or usable metadata are retained for review. For older drafts with a recorded starting revision, an equal current revision and no unfinished form identify an untouched copy; those can follow the public map. Old formats did not record whether a file was opened manually.
 
-No saved map data, sources, history, background or grid definitions change in this code update. Use public map replaces your working copy explicitly; keep a downloaded copy first if needed. The new editor fetches its public JSON with revalidation before deciding which working copy to use.
+The working-copy behaviour above is unchanged in rc.3. Its bundled revision-105 background is a separate data refresh; retained edited/file copies keep their own background until you deliberately choose the public starting map. Use public map replaces your working copy explicitly; keep a downloaded copy first if needed. The editor fetches its public JSON with revalidation before deciding which working copy to use.
 
 ## Provenance & Credits
 
