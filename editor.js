@@ -183,6 +183,23 @@ const TargetLayer=L.GridLayer.extend({createTile(coords){
   if(selected&&selected.i>=i0&&selected.i<=i1&&selected.j>=j0&&selected.j<=j1){
     const r=rect(selected.i,selected.j);ctx.strokeStyle='white';ctx.lineWidth=6;ctx.strokeRect(...r);ctx.strokeStyle='#113f63';ctx.lineWidth=3;ctx.strokeRect(...r);
   }
+  // Display edges only; keep the stored grid and ordinary red lines unchanged.
+  if (coords.z >= 6) {
+    const world = map.getPixelWorldBounds(coords.z);
+    const left = coords.x * size.x, top = coords.y * size.y;
+    ctx.save(); ctx.strokeStyle = '#17354b'; ctx.lineWidth = 1.5; ctx.setLineDash([6, 4]);
+    for (const x of [world.min.x - left, world.max.x - left]) {
+      if (x < -1e-7 || x > size.x + 1e-7) continue;
+      const edge = Math.max(0, Math.min(size.x, x));
+      ctx.beginPath(); ctx.moveTo(edge, 0); ctx.lineTo(edge, size.y); ctx.stroke();
+    }
+    for (const y of [world.min.y - top, world.max.y - top]) {
+      if (y < -1e-7 || y > size.y + 1e-7) continue;
+      const edge = Math.max(0, Math.min(size.y, y));
+      ctx.beginPath(); ctx.moveTo(0, edge); ctx.lineTo(size.x, edge); ctx.stroke();
+    }
+    ctx.restore();
+  }
   return canvas;
 }});
 const layer=new TargetLayer({keepBuffer:1,updateWhenZooming:false,zIndex:10}).addTo(map);

@@ -75,6 +75,8 @@ The manifest must match the existing grid; prepared blocks are checked against t
 
 The inspector explains when a selected dot lies wholly outside the map’s visible latitude range, above or below about **85.05°**. The note appears directly below its classification and above its separate eligibility explanation. Dots in the two partly visible edge rows get a partial-visibility note instead. Ordinary dots show no extra note, even when currently off screen. These messages use the map projection’s limit and the original dot bounds; switching background imagery or panning does not change their meaning. The full grid remains inspectable/editable by ID, and no classification or geometry is changed.
 
+At close zoom, the dark dashed frame marks the ±180° seam and north/south map-display cutoffs. It separates the two partial seam columns and shows where the polar rows are clipped. The ordinary red grid lines and all stored geographic bounds remain unchanged.
+
 The world map repeats visually when panned far enough east or west. These copies use the same stored dot IDs and decisions. This display behaviour is explained in Help rather than repeated in the editing panel.
 
 ## Working-copy recovery
